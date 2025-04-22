@@ -1,2 +1,2 @@
 // DB interaction logic using GORM
-package user
+package repository

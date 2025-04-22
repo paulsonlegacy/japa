@@ -1,0 +1,7 @@
+# Folders
+bin/
+
+# Files
+*.txt
+internal/config/*env
+logs/*log

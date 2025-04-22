@@ -2,10 +2,10 @@
 package db
 
 import (
-	"time"
+	//"time"
 
-	"japa/internals/config"
-	//"japa/internals/user"
+	"japa/internal/config"
+	"japa/internal/models"
 
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
@@ -35,20 +35,23 @@ func NewGormDB(cfg config.DatabaseConfig) *DB {
 	}
 
 	// Connection Pool Settings
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetConnMaxLifetime(time.Hour)
-	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.MaxLifeTime)
+	sqlDB.SetConnMaxIdleTime(cfg.MaxIdleTime)
 
 	zap.L().Debug("Database connection established. Starting migration...")
 
 	// Auto-migrate all models
-	// if err := gormDB.AutoMigrate(&user.User{}); err != nil {
-	// 	zap.L().Error("Database migration failed", zap.Error(err))
-	// 	panic("Database migration failed: " + err.Error())
-	// }
+	if err := gormDB.AutoMigrate(
+		&models.User{},
+		&models.Application{},
+	); err != nil {
+		zap.L().Error("Database migration failed", zap.Error(err))
+		panic("Database migration failed: " + err.Error())
+	}
 
-	//zap.L().Debug("Database migration completed successfully!")
+	zap.L().Debug("Database migration completed successfully!")
 
 	return &DB{GormDB: gormDB}
 }

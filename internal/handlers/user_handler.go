@@ -1,2 +1,2 @@
 // Fiber handlers for user routes
-package user
+package handlers
