@@ -12,15 +12,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type DB struct {
-	GormDB *gorm.DB
-}
 
-func NewGormDB(cfg config.DatabaseConfig) *DB {
+// Initialize GORM DB
+func NewGormDB(cfg config.DatabaseConfig) *gorm.DB {
+	// DSN
 	dsn := cfg.DBURL
 
 	zap.S().Debugw("Opening database connection", "dburl", dsn)
 
+	// Opening database pool
 	gormDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		zap.L().Error("Failed to open database connection", zap.Error(err))
@@ -53,5 +53,6 @@ func NewGormDB(cfg config.DatabaseConfig) *DB {
 
 	zap.L().Debug("Database migration completed successfully!")
 
-	return &DB{GormDB: gormDB}
+	// Return *gorm.DB
+	return gormDB
 }

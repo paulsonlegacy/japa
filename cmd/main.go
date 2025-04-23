@@ -8,10 +8,14 @@ import (
 
 	"japa/internal/config"
 	"japa/internal/infrastructure/db"
+	"japa/internal/repository"
+	"japa/internal/services"
+	"japa/internal/handlers"
 	"japa/internal/infrastructure/logging"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/go-playground/validator/v10"
 )
 
 var (
@@ -39,7 +43,7 @@ func init() {
 
 // Application entry point
 func main() {
-	// Initialize
+	// Initialize configurations
 	log.Println(ENV_PATH)
 	cfg := config.InitConfig(ENV_PATH)
 	
@@ -49,9 +53,14 @@ func main() {
 
 	// Initialize DB
 	db := db.NewGormDB(cfg.Database)
-	log.Println(db.GormDB)
 
+	// Initialize validator
+	val := validator.New()
 
+	// Initialize user functions
+	userRepo := repository.NewUserRepository(db)
+	userService := services.NewUserService(userRepo, db)
+	userHandler := handlers.NewUserHandler(val, userService)
 
 	app := fiber.New(
 		fiber.Config{
@@ -76,28 +85,13 @@ func main() {
 	app.Get("/", func(c *fiber.Ctx) error {
 		log.Println("About to test logger");
 		logging.Logger.Info("Testing Logger hehe!")
-		return c.SendString("This is default home")
+		return c.SendString("This is home endpoint")
 	})
 
 	// Group: /api/v1
 	v1 := app.Group("/api/v1")
-	v1.Get("/ping", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"message": "pong",
-		})
-	})
-
-	// Group: /api/v2
-	v2 := app.Group("/api/v2")
-	v2.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("This is v2 home")
-	})
-
-	v2.Get("/users/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		log.Println("User ID:", id)
-		return c.SendString("User ID is: " + id)
-	})
+	v1.Post("/register", userHandler.Register)
+	v1.Post("/login", userHandler.Login)
 
 	// Start the server
 	log.Fatal(app.Listen(address))

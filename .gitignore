@@ -3,5 +3,6 @@ bin/
 
 # Files
 *.txt
+*.docx
 internal/config/*env
 logs/*log

@@ -1,10 +1,11 @@
 package logging
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"os"
 	"japa/internal/config"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 
