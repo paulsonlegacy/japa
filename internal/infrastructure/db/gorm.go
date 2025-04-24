@@ -45,7 +45,8 @@ func NewGormDB(cfg config.DatabaseConfig) *gorm.DB {
 	// Auto-migrate all models
 	if err := gormDB.AutoMigrate(
 		&models.User{},
-		&models.Application{},
+		&models.VisaApplication{},
+		&models.Document{},
 	); err != nil {
 		zap.L().Error("Database migration failed", zap.Error(err))
 		panic("Database migration failed: " + err.Error())

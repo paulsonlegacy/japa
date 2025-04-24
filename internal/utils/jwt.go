@@ -10,11 +10,12 @@ import (
 )
 
 
-func GenerateJWT(user models.User) (string, error) {
+func GenerateJWT(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": user.ID,
-		"username": user.Username,
+		"firstname": user.FirstName,
 		"email": user.Email,
+		"role": user.Role,
 		"exp": time.Now().Add(config.Settings.JWT.Expiry).Unix(),
 		"iss": config.Settings.JWT.Issuer,
 	}

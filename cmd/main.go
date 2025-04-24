@@ -13,14 +13,17 @@ import (
 	"japa/internal/handlers"
 	"japa/internal/infrastructure/logging"
 
+	"github.com/oklog/ulid/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/go-playground/validator/v10"
 )
 
+// GLOBAL VARIABLES
 var (
 	BASE_PATH string
 	ENV_PATH string
+	Val *validator.Validate = validator.New()	// Initialize validator
 )
 
 
@@ -38,6 +41,12 @@ func init() {
 
 	// Setting env path
 	ENV_PATH  = filepath.Join(BASE_PATH, "internal/config/.env") // ENV file 
+
+	// Register custom validator for ulid inputs
+	Val.RegisterValidation("ulid", func(fl validator.FieldLevel) bool {
+		_, err := ulid.Parse(fl.Field().String())
+		return err == nil
+	})
 }
 
 
@@ -54,13 +63,10 @@ func main() {
 	// Initialize DB
 	db := db.NewGormDB(cfg.Database)
 
-	// Initialize validator
-	val := validator.New()
-
 	// Initialize user functions
 	userRepo := repository.NewUserRepository(db)
 	userService := services.NewUserService(userRepo, db)
-	userHandler := handlers.NewUserHandler(val, userService)
+	userHandler := handlers.NewUserHandler(Val, userService)
 
 	app := fiber.New(
 		fiber.Config{

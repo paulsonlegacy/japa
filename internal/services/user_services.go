@@ -42,8 +42,6 @@ func (us *UserService) RegisterUser(ctx context.Context, user *models.User) erro
 	return us.DB.Transaction(func (tx *gorm.DB) error {
 		// 1. Save user
 		zap.L().Info("Saving user to DB")
-
-		user.Password = utils.HashPassword(user.Password)
 		if err := us.Repo.Create(tx, user); err != nil {
 			return err // rollback
 		}
@@ -90,7 +88,7 @@ func (us *UserService) Login(email, password string) (string, error) {
 	}
 
 	// Generate JWT Token
-	token, err := utils.GenerateJWT(*user)
+	token, err := utils.GenerateJWT(user)
 	if err != nil {
 		return "", err
 	}

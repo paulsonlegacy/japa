@@ -22,13 +22,13 @@ type UserHandler struct {
 // METHODS
 
 // Initialize user handler
-func NewUserHandler(v *validator.Validate, uc *services.UserService) *UserHandler {
-	return &UserHandler{v, uc}
+func NewUserHandler(v *validator.Validate, us *services.UserService) *UserHandler {
+	return &UserHandler{v, us}
 }
 
 
 // Register handler
-func (uh UserHandler) Register(c *fiber.Ctx) error {
+func (uh *UserHandler) Register(c *fiber.Ctx) error {
 	var user models.User
 
 	// Parsing incoming payload into user object
