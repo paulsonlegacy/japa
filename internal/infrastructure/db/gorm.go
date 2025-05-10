@@ -5,7 +5,7 @@ import (
 	//"time"
 
 	"japa/internal/config"
-	"japa/internal/models"
+	"japa/internal/domain/entity"
 
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
@@ -44,9 +44,9 @@ func NewGormDB(cfg config.DatabaseConfig) *gorm.DB {
 
 	// Auto-migrate all models
 	if err := gormDB.AutoMigrate(
-		&models.User{},
-		&models.VisaApplication{},
-		&models.Document{},
+		&entity.User{},
+		&entity.VisaApplication{},
+		&entity.Document{},
 	); err != nil {
 		zap.L().Error("Database migration failed", zap.Error(err))
 		panic("Database migration failed: " + err.Error())

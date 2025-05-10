@@ -1,11 +1,9 @@
-package models
+package entity
 
 import (
 	"time"
-	"math/rand"
 
 	"github.com/oklog/ulid/v2"
-	"gorm.io/gorm"
 )
 
 // Document stores user-uploaded documents per application
@@ -19,17 +17,6 @@ type Document struct {
 	FilePath      string    `gorm:"not null"` // where it's stored locally or cloud URL
 	UploadedAt    time.Time `gorm:"autoCreateTime"`
 }
-
-// BeforeCreate hook runs before a new record is inserted into the DB.
-// We use this to generate a ULID for the primary key.
-func (d *Document) BeforeCreate(tx *gorm.DB) (err error) {
-	t := time.Now().UTC()
-	entropy := rand.New(rand.NewSource(t.UnixNano()))
-
-	d.ID = ulid.MustNew(ulid.Timestamp(t), entropy)
-	return nil
-}
-
 
 
 // Document placeholder

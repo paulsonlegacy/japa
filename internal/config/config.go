@@ -19,6 +19,14 @@ type DatabaseConfig struct {
 	MaxLifeTime  time.Duration
 }
 
+type EmailConfig struct {
+	EMAIL_HOST   	 string
+	EMAIL_PORT   	 int
+	EMAIL_USERNAME   string
+	EMAIL_PASSWORD   string
+	EMAIL_FROM       string
+	TEMPLATE_DIR     string
+}
 
 type JWTConfig struct {
 	JWTSecretKey string
@@ -54,8 +62,9 @@ type LoggingConfig struct {
 
 type Config struct {
 	Database DatabaseConfig
+	Email    EmailConfig
 	JWT      JWTConfig
-	LoggingConfig LoggingConfig
+	Logging LoggingConfig
 }
 
 
@@ -71,12 +80,20 @@ func InitConfig(envFilePath string) *Config {
 			MaxIdleTime:  mustParseDuration("15m"),
 			MaxLifeTime:  mustParseDuration("1h"),
 		},
+		Email: EmailConfig{
+			EMAIL_HOST: getEnv("EMAIL_HOST", ""),
+			EMAIL_PORT: getEnvInt("EMAIL_PORT", 465),
+			EMAIL_USERNAME: getEnv("EMAIL_USERNAME", ""),
+			EMAIL_PASSWORD: getEnv("EMAIL_PASSWORD", ""),
+			EMAIL_FROM: getEnv("EMAIL_FROM", "legacywebhub@gamil.com"),
+			TEMPLATE_DIR: getEnv("TEMPLATE_DIR", "template"),
+		},
 		JWT: JWTConfig{
 			JWTSecretKey: getEnv("JWT_SECRET_KEY", ""),
 			Issuer:       getEnv("JWT_ISSUER", "japa"),
 			Expiry:       time.Hour * 24,
 		},
-		LoggingConfig: LoggingConfig{
+		Logging: LoggingConfig{
 			EnvType:          getEnv("ENV_TYPE", "LOCAL-DEV"),
 			LogFilePath:      getEnv("LOG_FILE_PATH", "./logs/japa.log"),
 			ErrorLogFilePath: getEnv("ERROR_LOG_FILE_PATH", "./logs/japa-errors.log"),

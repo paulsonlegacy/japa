@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"japa/internal/models"
-	"japa/internal/services"
+	"japa/internal/app/http/dto/request"
+	"japa/internal/domain/entity"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -13,32 +13,31 @@ import (
 
 // VisaApplication handler
 type VisaApplicationHandler struct {
-	Validator  *validator.Validate
-	Service *services.VisaApplicationService
+	Validator *validator.Validate
+	Usecase   *usecase.UserUsecase
 }
-
 
 // METHODS
 
 // Initialize VisaApplication handler
-func NewVisaApplicationHandler(v *validator.Validate, vas *services.VisaApplicationService) *VisaApplicationHandler {
+func NewVisaApplicationHandler(v *validator.Validate, vas *usecase.VisaApplicationService) *VisaApplicationHandler {
 	return &VisaApplicationHandler{v, vas}
 }
 
 // Handler for visa submission
 func (vah *VisaApplicationHandler) SubmitVisaApplication(c *fiber.Ctx) error {
-	var input models.VisaApplicationInput
-	_ = c.BodyParser(&input)
+	var req request.CreateVisaApplicationRequest
+	_ = c.BodyParser(&req)
 
 	// Validate fields
-	if err := vah.Validator.Struct(input); err != nil {
+	if err := vah.Validator.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	// Convert input to GORM model
-	visaApp, err := models.ToVisaApplication(&input)
+	// Convert req to GORM model
+	visaApp, err := entity.ToVisaApplication(&req)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid ULID",

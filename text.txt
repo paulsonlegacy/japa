@@ -1,0 +1,28 @@
+the structure I later went for for my internal folder:
+
+internal/
+|
+|------ app/
+|             |-- http/
+|             |     |-- dto/
+|             |     |      |-- request/
+|             |     |      |-- response/
+|             |     |-- handlers/     
+|             |      |-- middleware/
+|             |-- websocket/
+|       
+|------ config/
+|------ domain/
+|          |-- entity/
+|          |-- repository/
+|          |-- service/
+|
+|------ infrastructure/
+|          |-- db/
+|          |-- logging/
+|
+|------- pkg/
+|------- provider/
+
+
+How do you see it? I'm having doubts about the infrastructure folder as I'm not sure what is supposed to be contained there. Give your review

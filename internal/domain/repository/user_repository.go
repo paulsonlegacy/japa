@@ -2,16 +2,17 @@
 package repository
 
 import (
-	"japa/internal/models"
+	"japa/internal/domain/entity"
 	"gorm.io/gorm"
 )
+
 
 // TYPES
 
 // Repository method signatures
 type UserRepositoryInterface interface {
-	Create(user *models.User) error
-	FindByEmail(email string) (*models.User, error)
+	Create(user *entity.User) error
+	FindByEmail(email string) (*entity.User, error)
 }
 
 // UserRepository to interface with DB
@@ -29,14 +30,14 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 
 
 // Create user
-func (ur *UserRepository) Create(tx *gorm.DB, user *models.User) error {
+func (ur *UserRepository) Create(tx *gorm.DB, user *entity.User) error {
 	return tx.Create(user).Error
 }
 
 
 // Find user by email
-func (ur *UserRepository) FindByEmail(email string) (*models.User, error) {
-	var user models.User
+func (ur *UserRepository) FindByEmail(email string) (*entity.User, error) {
+	var user entity.User
 	err := ur.DB.Where("email = ?", email).First(&user).Error
 	return &user, err
 }

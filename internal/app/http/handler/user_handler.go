@@ -2,8 +2,10 @@
 package handlers
 
 import (
-	"japa/internal/models"
-	"japa/internal/services"
+	"japa/internal/app/http/dto/request"
+	"japa/internal/app/http/dto/response"
+	"japa/internal/domain/usecase"
+	//"japa/internal/domain/entity"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -14,38 +16,34 @@ import (
 
 // User handler
 type UserHandler struct {
-	Validator  *validator.Validate
-	Service *services.UserService
+	Validator *validator.Validate
+	Usecase   *usecase.UserUsecase
 }
-
 
 // METHODS
 
 // Initialize user handler
-func NewUserHandler(v *validator.Validate, us *services.UserService) *UserHandler {
+func NewUserHandler(v *validator.Validate, us *usecase.UserUsecase) *UserHandler {
 	return &UserHandler{v, us}
 }
 
-
 // Register handler
 func (uh *UserHandler) Register(c *fiber.Ctx) error {
-	var user models.User
-
-	// Parsing incoming payload into user object
-	if err := c.BodyParser(&user); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
+	// Parse req body
+	var body request.CreateUserRequest
+	if err := body.Bind(c, uh.Validator); err != nil {
+		return response.BadRequest(c)
 	}
 
 	// Registering user
-	err := uh.Service.RegisterUser(c.Context(), &user)
+	err := uh.Usecase.RegisterUser(c.Context(), body)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return response.InternalServerError(c, err.Error())
 	}
 
 	// If registeration succeeded
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"success":"registeration successful"})
+	return response.Created(c, "registeration successful")
 }
-
 
 // Login handler
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
@@ -60,7 +58,7 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Confirming user
-	token, err := uh.Service.Login(body.Email, body.Password)
+	token, err := uh.Usecase.Login(body.Email, body.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
