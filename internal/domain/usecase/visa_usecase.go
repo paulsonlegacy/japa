@@ -3,7 +3,7 @@ package usecase
 import (
 	"time"
 	"context"
-	"errors"
+	//"errors"
 
 	"japa/internal/app/http/dto/request"
 	"japa/internal/domain/entity"
@@ -13,13 +13,13 @@ import (
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/oklog/ulid/v2"
 )
 
 
 // UserUsecase handles user-related business logic
 type VisaApplicationUsecase struct {
-	Repo *repository.UserRepository
+	Repo *repository.VisaRepository
 	DB   *gorm.DB
 	//Mailer Mailer
 }
@@ -27,36 +27,80 @@ type VisaApplicationUsecase struct {
 // METHODS
 
 // Initialize UserUsecase
-func NewVisaApplicationUsecase(repo *repository.UserRepository, db *gorm.DB) *UserUsecase {
-	return &UserUsecase{Repo: repo, DB: db}
+func NewVisaApplicationUsecase(repo *repository.VisaRepository, db *gorm.DB) *VisaApplicationUsecase {
+	return &VisaApplicationUsecase{Repo: repo, DB: db}
 }
 
-// Registers a new user and sends a welcome email
-func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.CreateUserRequest) error {
+// Creates a new visa application and sends a confirmation email
+func (usecase *VisaApplicationUsecase) CreateApplication(ctx context.Context, req request.CreateVisaApplicationRequest) error {
 	return usecase.DB.Transaction(func(tx *gorm.DB) error {
-		// 1. Save user
-		zap.L().Info("Saving user to DB..")
-
-		// Hash password
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		// 1. Type conversions
+		userID, err := ulid.Parse(req.UserID)
 		if err != nil {
 			return err
 		}
 
-		user := &entity.User{
-			ID:        util.NewULID(),
-			FullName:  req.FullName,
-			Username:  req.Username,
-			Email:     req.Email,
-			Phone:     req.Phone,
-			Password:  string(hashedPassword),
-			Role:      req.Role,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+		var travelDate time.Time
+		if req.TravelDate != "" {
+			travelDate, err = time.Parse("2006-01-02", req.TravelDate)
+			if err != nil {
+				return err
+			}
+		}
+		
+		var passportExpiry time.Time
+		if req.PersonalInfo.PassportExpiry != "" {
+			passportExpiry, err = time.Parse("2006-01-02", req.PersonalInfo.PassportExpiry)
+			if err != nil {
+				return err
+			}
+		}
+
+		var dob time.Time
+		if req.PersonalInfo.DateOfBirth != "" {
+			dob, err = time.Parse("2006-01-02", req.PersonalInfo.DateOfBirth)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 2. Save 
+		zap.L().Info("Saving application to DB..")
+
+		PersonalInfo := &entity.PersonalInfo{
+			PassportNumber: req.PersonalInfo.PassportNumber,
+			PassportExpiry: passportExpiry,
+			ResidentialAddr: req.PersonalInfo.ResidentialAddr,
+			Nationality: req.PersonalInfo.Nationality,
+			MaritalStatus: req.PersonalInfo.MaritalStatus,
+			DateOfBirth: dob,
+		}
+
+		EmergencyContact := &entity.EmergencyContact{
+			EmergencyName: req.EmergencyContact.EmergencyName,
+			EmergencyPhone: req.EmergencyContact.EmergencyPhone,
+			EmergencyRelation: req.EmergencyContact.EmergencyRelation,
+		}
+
+		application := &entity.VisaApplication{
+			ID:              util.NewULID(),
+			UserID:          userID,
+			Destination:     req.Destination,
+			VisaType:        req.VisaType,
+			TravelDate:      travelDate,
+			DurationOfStay:  req.DurationOfStay,
+			Purpose:         req.Purpose,
+			HasBeenDenied:   req.HasBeenDenied,
+			// Personal Info
+			PersonalInfo: PersonalInfo,
+			// Emergency Contact
+			EmergencyContact: EmergencyContact,
+			// Form URL
+			VisaFormURL:       req.VisaFormURL,
 		}
 
 
-		if err := usecase.Repo.Create(tx, user); err != nil {
+		if err := usecase.Repo.Create(tx, application); err != nil {
 			return err // rollback
 		}
 
@@ -84,27 +128,4 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 		// Everything succeeded
 		return nil // commit
 	})
-}
-
-// Logs in user based on credentials
-func (us *UserUsecase) Login(email, password string) (string, error) {
-	// Find user by email
-	user, err := us.Repo.FindByEmail(email)
-	if err != nil {
-		return "", errors.New("invalid credentials")
-	}
-
-	// Confirm password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return "", errors.New("invalid credentials")
-	}
-
-	// Generate JWT Token
-	token, err := pkg.GenerateJWT(user)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
 }

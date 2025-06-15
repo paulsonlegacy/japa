@@ -42,7 +42,7 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 	}
 
 	// If registeration succeeded
-	return response.Created(c, "registeration successful")
+	return response.UserRegisteredOK(c)
 }
 
 // Login handler
@@ -60,9 +60,9 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	// Confirming user
 	token, err := uh.Usecase.Login(body.Email, body.Password)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+		return response.Unauthorized(c, err.Error())
 	}
 
 	// Return JWT token
-	return c.JSON(fiber.Map{"token": token})
+	return response.Success(c, "login successful", map[string]any{"token": token})
 }
