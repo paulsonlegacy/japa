@@ -45,6 +45,7 @@ func NewGormDB(cfg config.DatabaseConfig) *gorm.DB {
 	// Auto-migrate all models
 	if err := gormDB.AutoMigrate(
 		&entity.User{},
+		//&entity.VisaFormInput{},
 		&entity.VisaApplication{},
 		&entity.Document{},
 	); err != nil {

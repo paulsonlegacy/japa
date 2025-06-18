@@ -18,6 +18,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/oklog/ulid/v2"
+	"go.uber.org/zap"
 )
 
 // GLOBAL VARIABLES
@@ -59,14 +60,21 @@ func main() {
 	defer logger.Sync()
 
 	// Initialize DB
+	zap.L().Debug("Initializing database connection")
 	db := db.NewGormDB(cfg.Database)
 
 	// Initialize Mailer
+	zap.L().Debug("Initializing mailing service")
 	mailer := mailer.NewSMTPMailer(cfg.Email)
 
 	// Initialize user functions
+	zap.L().Debug("Initializing repositories")
 	userRepo := repository.NewUserRepository(db)
+
+	zap.L().Debug("Initializing services")
 	UserUsecase := usecase.NewUserUsecase(userRepo, db, mailer)
+
+	zap.L().Debug("Initializing handlers")
 	userHandler := handlers.NewUserHandler(Val, UserUsecase)
 
 	app := fiber.New(
@@ -86,18 +94,19 @@ func main() {
 		),
 	)
 
-	address := ":8080"
-
-	// Root route
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("This is home endpoint")
-	})
+	zap.L().Debug("Linking http routes")
+	app.Get(
+		"/protocol", func(c *fiber.Ctx) error {
+			return c.SendString(c.Protocol()) // => https
+		},
+	)
 
 	// Group: /api/v1/
 	v1 := app.Group("/api/v1")
 	v1.Post("/register", userHandler.Register)
 	v1.Post("/login", userHandler.Login)
 
-	// Start the server
-	log.Fatal(app.Listen(address))
+	// Initialize server
+	zap.S().Debugw("Starting server at port ", cfg.Server.ServerAddress, "...")
+	log.Fatal(app.Listen(cfg.Server.ServerAddress))
 }

@@ -20,3 +20,14 @@ type VisaRepository struct {
 	DB *gorm.DB
 }
 
+// METHODS
+
+// Initialize UserRepository
+func NewVisaRepository(db *gorm.DB) *VisaRepository {
+	return &VisaRepository{DB: db}
+}
+
+// Create application
+func (vr *VisaRepository) Create(tx *gorm.DB, visa *entity.VisaApplication) error {
+	return tx.Create(visa).Error
+}

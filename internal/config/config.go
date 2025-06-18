@@ -34,6 +34,12 @@ type JWTConfig struct {
 	Expiry       time.Duration
 }
 
+type LoggingConfig struct {
+	EnvType          string
+	LogFilePath      string
+	ErrorLogFilePath string
+}
+
 /*
 1. EnvType: This tells your logger how “verbose” it should be.
 You can use it to switch between environments like:
@@ -54,13 +60,14 @@ General logs → LogFilePath (e.g., japa.log)
 
 Only error-level logs → ErrorLogFilePath (e.g., japa-errors.log)
 */
-type LoggingConfig struct {
-	EnvType          string
-	LogFilePath      string
-	ErrorLogFilePath string
+
+type ServerConfig struct {
+	ServerAddress   string
+	Port            string
 }
 
 type Config struct {
+	Server   ServerConfig
 	Database DatabaseConfig
 	Email    EmailConfig
 	JWT      JWTConfig
@@ -72,6 +79,9 @@ type Config struct {
 func InitConfig(envFilePath string) *Config {
 	loadEnvFile(envFilePath)
 	cfg := &Config{
+		Server: ServerConfig{
+			ServerAddress: getEnv("SERVER_ADDRESS", ":8080"),
+		},
 		Database: DatabaseConfig{
 			DBURL:     getEnv("DBURL", ""),
 			DBDRIVER:   getEnv("DBDRIVER", "mysql"),

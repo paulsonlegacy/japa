@@ -30,13 +30,13 @@ func NewUserHandler(v *validator.Validate, us *usecase.UserUsecase) *UserHandler
 // Register handler
 func (uh *UserHandler) Register(c *fiber.Ctx) error {
 	// Parse req body
-	var body request.CreateUserRequest
-	if err := body.Bind(c, uh.Validator); err != nil {
+	var reqBody request.CreateUserRequest
+	if err := reqBody.Bind(c, uh.Validator); err != nil {
 		return response.BadRequest(c)
 	}
 
 	// Registering user
-	err := uh.Usecase.RegisterUser(c.Context(), body)
+	err := uh.Usecase.RegisterUser(c.Context(), reqBody)
 	if err != nil {
 		return response.InternalServerError(c, err.Error())
 	}
@@ -47,18 +47,18 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 
 // Login handler
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
-	var body struct {
+	var reqBody struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
 	// Parsing incoming payload into user object
-	if err := c.BodyParser(&body); err != nil {
+	if err := c.BodyParser(&reqBody); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}
 
 	// Confirming user
-	token, err := uh.Usecase.Login(body.Email, body.Password)
+	token, err := uh.Usecase.Login(reqBody.Email, reqBody.Password)
 	if err != nil {
 		return response.Unauthorized(c, err.Error())
 	}

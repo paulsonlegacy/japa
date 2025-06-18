@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"japa/internal/app/http/dto/request"
-	"japa/internal/domain/entity"
+	"japa/internal/app/http/dto/response"
+	//"japa/internal/domain/entity"
+	"japa/internal/domain/usecase"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -12,48 +14,30 @@ import (
 // TYPES
 
 // VisaApplication handler
-type VisaApplicationHandler struct {
+type VisaHandler struct {
 	Validator *validator.Validate
-	Usecase   *usecase.UserUsecase
+	Usecase   *usecase.VisaUsecase
 }
 
 // METHODS
 
 // Initialize VisaApplication handler
-func NewVisaApplicationHandler(v *validator.Validate, vas *usecase.VisaApplicationService) *VisaApplicationHandler {
-	return &VisaApplicationHandler{v, vas}
+func NewVisaApplicationHandler(v *validator.Validate, uc *usecase.VisaUsecase) *VisaHandler {
+	return &VisaHandler{v, uc}
 }
 
 // Handler for visa submission
-func (vah *VisaApplicationHandler) SubmitVisaApplication(c *fiber.Ctx) error {
-	var req request.CreateVisaApplicationRequest
-	_ = c.BodyParser(&req)
-
-	// Validate fields
-	if err := vah.Validator.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+func (vh *VisaHandler) SubmitVisaApplication(c *fiber.Ctx) error {
+	var reqBody request.CreateVisaApplicationRequest
+	if err := reqBody.Bind(c, vh.Validator); err != nil {
+		return response.BadRequest(c)
 	}
 
-	// Convert req to GORM model
-	visaApp, err := entity.ToVisaApplication(&req)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ULID",
-		})
+	// Pass to usecase layer
+	if err := vh.Usecase.CreateVisaApplication(c.Context(), reqBody); err != nil {
+		return response.InternalServerError(c, err.Error())
 	}
 
-	// Save to DB (assuming db is a *gorm.DB)
-	if err := vah.Service.Repo.DB.Create(&visaApp).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to save application",
-		})
-	}
-
-	// If successful
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Visa application submitted",
-		"data":    visaApp,
-	})
+	// If application successful
+	return response.Success(c, "Visa application was successful")
 }
