@@ -35,9 +35,11 @@ func (ur *UserRepository) Create(tx *gorm.DB, user *entity.User) error {
 }
 
 
-// Find user by email
-func (ur *UserRepository) FindByEmail(email string) (*entity.User, error) {
+// Find user by email or username
+func (ur *UserRepository) FindByEmailOrUsername(identifier string) (*entity.User, error) {
 	var user entity.User
-	err := ur.DB.Where("email = ?", email).First(&user).Error
+	err := ur.DB.
+		Where("email = ? OR username = ?", identifier, identifier).
+		First(&user).Error
 	return &user, err
 }

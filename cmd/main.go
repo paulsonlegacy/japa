@@ -25,7 +25,7 @@ import (
 var (
 	BASE_PATH string
 	ENV_PATH  string
-	Val       *validator.Validate = validator.New() // Initialize validator
+	Validator *validator.Validate = validator.New() // Initialize validator
 )
 
 // init() runs before main function is executed
@@ -43,7 +43,7 @@ func init() {
 	ENV_PATH = filepath.Join(BASE_PATH, "internal/config/.env") // ENV file
 
 	// Register custom validator for ulid inputs
-	Val.RegisterValidation("ulid", func(fl validator.FieldLevel) bool {
+	Validator.RegisterValidation("ulid", func(fl validator.FieldLevel) bool {
 		_, err := ulid.Parse(fl.Field().String())
 		return err == nil
 	})
@@ -67,15 +67,18 @@ func main() {
 	zap.L().Debug("Initializing mailing service")
 	mailer := mailer.NewSMTPMailer(cfg.Email)
 
-	// Initialize user functions
+	// Initialize app functions
 	zap.L().Debug("Initializing repositories")
 	userRepo := repository.NewUserRepository(db)
+	visaRepo := repository.NewVisaRepository(db)
 
 	zap.L().Debug("Initializing services")
-	UserUsecase := usecase.NewUserUsecase(userRepo, db, mailer)
+	userUsecase := usecase.NewUserUsecase(userRepo, db, mailer)
+	visaUsecase := usecase.NewVisaUsecase(visaRepo, db)
 
 	zap.L().Debug("Initializing handlers")
-	userHandler := handlers.NewUserHandler(Val, UserUsecase)
+	userHandler := handlers.NewUserHandler(Validator, userUsecase)
+	visaHandler := handlers.NewVisaHandler(Validator, visaUsecase)
 
 	app := fiber.New(
 		fiber.Config{
@@ -105,6 +108,9 @@ func main() {
 	v1 := app.Group("/api/v1")
 	v1.Post("/register", userHandler.Register)
 	v1.Post("/login", userHandler.Login)
+
+	visaGroup :=  v1.Group("/visa")
+	visaGroup.Post("/apply", visaHandler.SubmitVisaApplication)
 
 	// Initialize server
 	zap.S().Debugw("Starting server at port ", cfg.Server.ServerAddress, "...")

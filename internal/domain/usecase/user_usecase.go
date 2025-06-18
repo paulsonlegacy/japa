@@ -94,9 +94,9 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 }
 
 // Logs in user based on credentials
-func (us *UserUsecase) Login(email, password string) (string, error) {
-	// Find user by email
-	user, err := us.Repo.FindByEmail(email)
+func (us *UserUsecase) Login(account string, password string) (string, error) {
+	// Find user by email or ussername 
+	user, err := us.Repo.FindByEmailOrUsername(account)
 	if err != nil {
 		return "", errors.New("invalid credentials")
 	}

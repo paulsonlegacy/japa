@@ -22,7 +22,7 @@ type VisaHandler struct {
 // METHODS
 
 // Initialize VisaApplication handler
-func NewVisaApplicationHandler(v *validator.Validate, uc *usecase.VisaUsecase) *VisaHandler {
+func NewVisaHandler(v *validator.Validate, uc *usecase.VisaUsecase) *VisaHandler {
 	return &VisaHandler{v, uc}
 }
 

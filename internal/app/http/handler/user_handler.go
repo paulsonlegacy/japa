@@ -48,7 +48,7 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 // Login handler
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	var reqBody struct {
-		Email    string `json:"email"`
+		Account string `json:"account"` // Username or Email
 		Password string `json:"password"`
 	}
 
@@ -58,7 +58,7 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Confirming user
-	token, err := uh.Usecase.Login(reqBody.Email, reqBody.Password)
+	token, err := uh.Usecase.Login(reqBody.Account, reqBody.Password)
 	if err != nil {
 		return response.Unauthorized(c, err.Error())
 	}
