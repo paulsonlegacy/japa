@@ -19,13 +19,15 @@ type DatabaseConfig struct {
 	MaxLifeTime  time.Duration
 }
 
+type SMTPConfig struct {
+	EMAIL_HOST     string
+	EMAIL_PORT     int
+	EMAIL_USERNAME string
+	EMAIL_PASSWORD string
+}
+
 type EmailConfig struct {
-	EMAIL_HOST   	 string
-	EMAIL_PORT   	 int
-	EMAIL_USERNAME   string
-	EMAIL_PASSWORD   string
-	EMAIL_FROM       string
-	TEMPLATE_DIR     string
+	SMTPConfig  SMTPConfig
 }
 
 type JWTConfig struct {
@@ -63,7 +65,10 @@ Only error-level logs → ErrorLogFilePath (e.g., japa-errors.log)
 
 type ServerConfig struct {
 	ServerAddress   string
-	Port            string
+	ServerPort      string
+	TemplateDir     string
+	EmailFrom       string
+	EmailTemplate   string
 }
 
 type Config struct {
@@ -81,6 +86,9 @@ func InitConfig(envFilePath string) *Config {
 	cfg := &Config{
 		Server: ServerConfig{
 			ServerAddress: getEnv("SERVER_ADDRESS", ":8080"),
+			TemplateDir:   getEnv("TEMPLATE_DIR", "templates"),
+			EmailFrom:     getEnv("EMAIL_FROM", "legacywebhub@gamil.com"),
+			EmailTemplate:     getEnv("EMAIL_TEMPLATE", "email_template.html"),
 		},
 		Database: DatabaseConfig{
 			DBURL:     getEnv("DBURL", ""),
@@ -91,12 +99,12 @@ func InitConfig(envFilePath string) *Config {
 			MaxLifeTime:  mustParseDuration("1h"),
 		},
 		Email: EmailConfig{
-			EMAIL_HOST: getEnv("EMAIL_HOST", ""),
-			EMAIL_PORT: getEnvInt("EMAIL_PORT", 465),
-			EMAIL_USERNAME: getEnv("EMAIL_USERNAME", ""),
-			EMAIL_PASSWORD: getEnv("EMAIL_PASSWORD", ""),
-			EMAIL_FROM: getEnv("EMAIL_FROM", "legacywebhub@gamil.com"),
-			TEMPLATE_DIR: getEnv("TEMPLATE_DIR", "template"),
+			SMTPConfig: SMTPConfig{
+				EMAIL_HOST: getEnv("EMAIL_HOST", ""),
+				EMAIL_PORT: getEnvInt("EMAIL_PORT", 465),
+				EMAIL_USERNAME: getEnv("EMAIL_USERNAME", ""),
+				EMAIL_PASSWORD: getEnv("EMAIL_PASSWORD", ""),
+			},
 		},
 		JWT: JWTConfig{
 			JWTSecretKey: getEnv("JWT_SECRET_KEY", ""),

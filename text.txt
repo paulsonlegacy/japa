@@ -26,3 +26,79 @@ internal/
 
 
 How do you see it? I'm having doubts about the infrastructure folder as I'm not sure what is supposed to be contained there. Give your review
+
+
+GPT I'm having confusions over some implementations since the structure of our payload changed.. this is our current payload structure:
+
+{
+  "user_id": "user_id",
+  "visa_form_input": {     // can be null
+    "destination": "Germany",
+	"visa_type": "Student",
+	"travel_date": "2025-09-01T00:00:00Z",
+	"duration_of_stay": "2 years",
+	"purpose": "University Education",
+	"has_been_denied": false,
+	"personal_info": {
+		"passport_number": "A12345678",
+		"passport_expiry": "2029-12-31T00:00:00Z",
+		"residential_address": "123 Lagos Street, Abuja",
+		"nationality": "Nigerian",
+		"marital_status": "Single",
+		"date_of_birth": "2001-07-15T00:00:00Z"
+	},
+	"emergency_contact": {
+		"emergency_name": "John Doe",
+		"emergency_phone": "+2348012345678",
+		"emergency_relationship": "Brother"
+	}
+  },
+  "visa_form_url": "https://form.url" // can be null
+}
+
+now visaFormInput should be a table on its own but I'm thinking of making is a visa_form_input (JSON) column on visa_application table..
+since all fields will be validated anyway before saving. Does MYSQL support JSON columns and what do you think of this approach?
+Is it scalable? what are the cons? what if I later decide to migrate to POSTGRES DB-will it be complicated and messy?
+
+what is the pros and cons of gorm.io/datatypes over datatypes.JSON? how to import datatypes
+
+GPT I now need to do double validation.. validate VisaFormInput to be sure its a JSON string first, convert to JSON and then
+use rules defined in VisaFormInputRequest struct.. Correct the CreateVisaApplicationRequest struct and edit the Bind method to do this (Or are we supposed to do this in the service layer)?🤔🤔
+
+type CreateVisaApplicationRequest struct {
+	UserID  string    `json:"user_id" validate:"required,ulid"`
+
+	// Optional fields
+	VisaFormInput *VisaFormInputRequest `json:"visa_form_input" validate:"omitempty,json"`
+	VisaFormURL  *string `json:"visa_form_url" validate:"omitempty,url"`
+}
+
+
+func (req *CreateVisaApplicationRequest) Bind(c *fiber.Ctx, v *validator.Validate) error {
+	// Parse request body into req
+	if err := c.BodyParser(req); err != nil {
+		return err
+	}
+
+	// Validate request struct
+	if err := v.Struct(req); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type VisaFormInputRequest struct {
+	Destination      string    `json:"destination" validate:"required,min=2"`
+	VisaType         string    `json:"visa_type" validate:"required"`
+	TravelDate       string    `json:"travel_date" validate:"required"`
+	DurationOfStay   string    `json:"duration_of_stay" validate:"required"`
+	Purpose          string    `json:"purpose" validate:"required"`
+	HasBeenDenied    bool      `json:"has_been_denied"`
+
+	// Personal details
+	PersonalInfo      PersonalInfoRequest     `json:"personal_info" validate:"required"`
+
+	// Emergency contact
+	EmergencyContact  EmergencyContactRequest `json:"emergency_contact"`
+}
