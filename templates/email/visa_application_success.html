@@ -1,0 +1,24 @@
+{{define "content"}}
+<p>Hello {{.Name}},</p>
+
+<p>Your visa application request has been successfully submitted on {{.SiteName}}.</p>
+
+<p><strong>Application ID:</strong> {{.ApplicationID}}</p>
+
+<p>You can track the status of your application at any time by logging into your account and navigating to the <strong>My Applications</strong> section, or by clicking the button below.</p>
+
+{{if .LinkURL}}
+  <p style="margin: 30px 0px;">
+    <a href="{{.LinkURL}}" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
+      {{.LinkText}}
+    </a>
+  </p>
+{{end}}
+
+<p>If you have any questions or need assistance, please contact our support team at <a href="mailto:{{.SiteEmail}}">{{.SiteEmail}}</a>.</p>
+
+<p>Thank you for choosing {{.SiteName}}.</p>
+
+<p>Best regards,<br>
+Team {{.SiteName}}</p>
+{{end}}

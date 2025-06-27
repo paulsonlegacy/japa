@@ -1,0 +1,10 @@
+{{define "content"}}
+<p>Hello {{.Name}},</p>
+<p>Welcome to {{.SiteName}}! We’re glad to have you.</p>
+
+{{if .LinkURL}}
+  <p style="margin: 30px 0px;"><a href="{{.LinkURL}}" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">{{.LinkText}}</a></p>
+{{end}}
+
+<p>Cheers,<br>Team {{.SiteName}}</p>
+{{end}}

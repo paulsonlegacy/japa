@@ -66,17 +66,23 @@ Only error-level logs → ErrorLogFilePath (e.g., japa-errors.log)
 type ServerConfig struct {
 	ServerAddress   string
 	ServerPort      string
+}
+
+type SiteSettings struct {
+	SiteName        string
+	SiteDomain      string
+	SiteEmail       string
+	LogoURL         string
 	TemplateDir     string
-	EmailFrom       string
-	EmailTemplate   string
 }
 
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Email    EmailConfig
-	JWT      JWTConfig
-	Logging LoggingConfig
+	SiteSettings SiteSettings
+	Server       ServerConfig
+	Database     DatabaseConfig
+	Email        EmailConfig
+	JWT          JWTConfig
+	Logging      LoggingConfig
 }
 
 
@@ -84,11 +90,15 @@ type Config struct {
 func InitConfig(envFilePath string) *Config {
 	loadEnvFile(envFilePath)
 	cfg := &Config{
+		SiteSettings: SiteSettings{
+			SiteName:      getEnv("SITE_NAME", ""),
+			SiteDomain:    getEnv("SITE_DOMAIN", ""),
+			SiteEmail:     getEnv("SITE_EMAIL", "legacywebhub@gamil.com"),
+			LogoURL:       getEnv("LOGO_URL", ""),
+			TemplateDir:   getEnv("TEMPLATE_DIR", "templates"),
+		},
 		Server: ServerConfig{
 			ServerAddress: getEnv("SERVER_ADDRESS", ":8080"),
-			TemplateDir:   getEnv("TEMPLATE_DIR", "templates"),
-			EmailFrom:     getEnv("EMAIL_FROM", "legacywebhub@gamil.com"),
-			EmailTemplate:     getEnv("EMAIL_TEMPLATE", "email_template.html"),
 		},
 		Database: DatabaseConfig{
 			DBURL:     getEnv("DBURL", ""),

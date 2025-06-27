@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
+	//"fmt"
 	"time"
 
 	"japa/internal/app/http/dto/request"
@@ -68,14 +68,14 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 
 		// 2. Send welcome email in goroutine with timeout
 		zap.L().Info("Forwarding welcome email..")
-		emailData := mailer.StandardMailData(user.Username, fmt.Sprintf("Welcome, %s", user.Username))
+		emailData := mailer.WelcomeMail(user.Username)
 
 		// Goroutine channel
 		done := make(chan error, 1)
 
 		go func() {
 			// Simulate email sending
-			err := usecase.Mail.SendTemplate(user.Email, "Registeration Successful", "email_template.html", emailData)
+			err := usecase.Mail.SendViaSMTP(user.Email, emailData)
 			done <- err
 		}()
 
@@ -84,7 +84,7 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 				if err != nil {
 					return err // rollback
 				}
-			case <-time.After(5 * time.Second):
+			case <-time.After(45 * time.Second):
 				return errors.New("email send timeout") // rollback
 		}
 
