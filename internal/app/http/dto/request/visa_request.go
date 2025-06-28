@@ -59,7 +59,7 @@ func (req *CreateVisaApplicationRequest) Bind(c *fiber.Ctx, v *validator.Validat
 
 	// If both VisaFormInput and VisaFormURL are nil
 	if req.VisaFormInput == nil && req.VisaFormURL == nil {
-		return errors.New("Both application input and form URL cannot be empty")
+		return errors.New("both application input and form URL cannot be empty")
 	}
 
 	// If VisaFormInput is not nil, validate it separately
