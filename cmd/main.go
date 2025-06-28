@@ -13,6 +13,7 @@ import (
 	"japa/internal/infrastructure/mail"
 	"japa/internal/domain/repository"
 	"japa/internal/domain/usecase"
+	"japa/internal/app/http/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -80,6 +81,10 @@ func main() {
 	userHandler := handlers.NewUserHandler(Validator, userUsecase)
 	visaHandler := handlers.NewVisaHandler(Validator, visaUsecase)
 
+	// Initialize middleware
+	authMiddleware := middleware.NewAuthMiddleware(cfg.Server, db).Handler()
+
+	// Setup server
 	app := fiber.New(
 		fiber.Config{
 			EnablePrintRoutes: true,
@@ -98,19 +103,24 @@ func main() {
 	)
 
 	zap.L().Debug("Linking http routes")
-	app.Get(
+	v1 := app.Group("/api/v1")
+	v1.Use(authMiddleware)
+
+	v1.Get(
 		"/protocol", func(c *fiber.Ctx) error {
 			return c.SendString(c.Protocol()) // => https
 		},
 	)
-
-	// Group: /api/v1/
-	v1 := app.Group("/api/v1")
 	v1.Post("/register", userHandler.Register)
 	v1.Post("/login", userHandler.Login)
 
+	// Visa routes
 	visaGroup :=  v1.Group("/visa")
 	visaGroup.Post("/apply", visaHandler.SubmitVisaApplication)
+
+	// Moderator routes (only moderator and superadmin can access)
+	moderatorGroup := v1.Group("/moderator")
+	moderatorGroup.Use(middleware.ModeratorOnly())
 
 	// Initialize server
 	zap.S().Debugw("Starting server at port ", cfg.Server.ServerAddress, "...")

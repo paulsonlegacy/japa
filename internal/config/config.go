@@ -66,6 +66,7 @@ Only error-level logs → ErrorLogFilePath (e.g., japa-errors.log)
 type ServerConfig struct {
 	ServerAddress   string
 	ServerPort      string
+	AuthorizationHeaderPath string
 }
 
 type SiteSettings struct {
@@ -99,6 +100,7 @@ func InitConfig(envFilePath string) *Config {
 		},
 		Server: ServerConfig{
 			ServerAddress: getEnv("SERVER_ADDRESS", ":8080"),
+			AuthorizationHeaderPath: "Authorization",
 		},
 		Database: DatabaseConfig{
 			DBURL:     getEnv("DBURL", ""),
