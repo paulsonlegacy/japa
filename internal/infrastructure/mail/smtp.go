@@ -2,11 +2,8 @@ package mailer
 
 import (
 	"sync"
-	"bytes"
 	"fmt"
-	"html/template"
 	"net/smtp"
-	"path/filepath"
 
     "japa/internal/config"
 
@@ -14,43 +11,30 @@ import (
 )
 
 type SMTPMailer struct {
-	SiteConfig      config.SiteSettings
-	EmailConfig     config.SMTPConfig
-	Logger          *zap.Logger
+	ServerConfig    config.ServerConfig // For server settings
+	SiteConfig      config.SiteConfig   // Site details for email template fill
+	EmailConfig     config.SMTPConfig   // Email settings
+	Logger          *zap.Logger         // For structured logging
 }
 
 // Initialize SMTPMailer
-func NewSMTPMailer(siteConfig config.SiteSettings, emailConfig config.SMTPConfig, logger *zap.Logger) *SMTPMailer {
+func NewSMTPMailer(
+	serverConfig config.ServerConfig,
+	siteConfig   config.SiteConfig, 
+	emailConfig  config.SMTPConfig, 
+	logger       *zap.Logger,
+) *SMTPMailer {
 	return &SMTPMailer{
+		ServerConfig: serverConfig,
 		SiteConfig:   siteConfig,
 		EmailConfig:  emailConfig,
 		Logger:       logger,
 	}
 }
 
-// Loads a template file and injects data
-func (s *SMTPMailer) parseTemplate(mailData *EmailData) (string, error) {
-	baseMailTemplatePath := filepath.Join(s.SiteConfig.TemplateDir, "email/base.html") // contains {{define "email_layout"}}
-	mailTemplatePath :=  filepath.Join(s.SiteConfig.TemplateDir, fmt.Sprintf("email/%s", mailData.EmailTemplate))  // contains {{define "content"}}
-	parsedTemplate, err := template.ParseFiles(baseMailTemplatePath, mailTemplatePath)
-	
-	if err != nil {
-		s.Logger.Error("template parsing error", zap.Error(err)) // Log error
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	if err := parsedTemplate.ExecuteTemplate(&buf,"email_layout", mailData); err != nil {
-		s.Logger.Error("template buffer error", zap.Error(err)) // Log error
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
 // Sends an email using an HTML template and dynamic data
-func (s *SMTPMailer) SendViaSMTP(to string, emailData *EmailData) error {
-	body, err := s.parseTemplate(emailData)
+func (s *SMTPMailer) Send(to any, emailData *EmailData) error {
+	body, err := ParseEmailTemplate(s.ServerConfig.TemplatesDir, emailData, s.Logger)
 	if err != nil {
 		return err
 	}
@@ -63,7 +47,8 @@ func (s *SMTPMailer) SendViaSMTP(to string, emailData *EmailData) error {
 	return nil
 }
 
-// Handles the low-level email delivery
+// Handles the low-level email delivery.
+// to @param is expecting either string or []string
 func (s *SMTPMailer) send(to any, subject, body string) error {
 	addr := fmt.Sprintf("%s:%d", s.EmailConfig.EMAIL_HOST, s.EmailConfig.EMAIL_PORT)
 	auth := smtp.PlainAuth("", s.EmailConfig.EMAIL_USERNAME, s.EmailConfig.EMAIL_PASSWORD, s.EmailConfig.EMAIL_HOST)

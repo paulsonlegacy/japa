@@ -3,31 +3,32 @@ package mailer
 import (
 	"fmt"
 	"time"
+	
 	"japa/internal/config"
 )
 
 var (
-	SiteName   string = config.Settings.SiteSettings.SiteName
-	SiteDomain string = config.Settings.Server.ServerAddress
-	SiteEmail  string = config.Settings.SiteSettings.SiteEmail
-	LogoURL    string = config.Settings.SiteSettings.LogoURL
+	SiteName   string = config.Settings.SiteConfig.SiteName
+	SiteDomain string = config.Settings.SiteConfig.SiteDomain
+	SiteEmail  string = config.Settings.SiteConfig.SiteEmail
+	LogoURL    string = config.Settings.SiteConfig.LogoURL
 	Year       int    = time.Now().Year()
 )
 
 type EmailData struct {
-  Name           string
-  Subject        string
-  Heading        string
-  Message        string
-  LinkURL        string
-  LinkText       string
-  LogoURL        string // optional
-  ApplicationID  string // optional
-  SiteName       string
-  SiteDomain     string
-  SiteEmail      string
-  Year           int
-  EmailTemplate  string
+	Name          string
+	Subject       string
+	Heading       string
+	Message       string
+	LinkURL       string
+	LinkText      string
+	LogoURL       string // optional
+	ApplicationID string // optional
+	SiteName      string
+	SiteDomain    string
+	SiteEmail     string
+	Year          int
+	EmailTemplate string
 }
 
 func WelcomeMail(name string) *EmailData {

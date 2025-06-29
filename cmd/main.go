@@ -57,16 +57,29 @@ func main() {
 	cfg := config.InitConfig(ENV_PATH)
 
 	// Initialize logger
-	logger := logging.InitLogger(cfg.Logging)
+	logger := logging.InitLogger(cfg.LoggingConfig)
 	defer logger.Sync()
 
 	// Initialize DB
 	zap.L().Debug("Initializing database connection")
-	db := db.NewGormDB(cfg.Database)
+	db := db.NewGormDB(cfg.DBConfig)
 
-	// Initialize Mailer
-	zap.L().Debug("Initializing mailing service")
-	mailer := mailer.NewSMTPMailer(cfg.Email)
+	// Initialize mailing providers
+	zap.L().Debug("Initializing mailing providers")
+	smtpMailer := mailer.NewSMTPMailer(
+		cfg.ServerConfig,
+		cfg.SiteConfig,
+		cfg.EmailConfig.SMTPConfig,
+		logger,
+	)
+	mailer := &mailer.ResponsiveMailer{
+		Providers: []mailer.Mailer{
+			//sendgridMailer, // first try
+			//mailgunMailer,  // fallback if SendGrid fails
+			smtpMailer,     // fallback if Mailgun fails
+		},
+	}
+
 
 	// Initialize app functions
 	zap.L().Debug("Initializing repositories")
@@ -74,7 +87,7 @@ func main() {
 	visaRepo := repository.NewVisaRepository(db)
 
 	zap.L().Debug("Initializing services")
-	userUsecase := usecase.NewUserUsecase(userRepo, db, mailer)
+	userUsecase := usecase.NewUserUsecase(cfg.JWTConfig, userRepo, db, mailer)
 	visaUsecase := usecase.NewVisaUsecase(visaRepo, db)
 
 	zap.L().Debug("Initializing handlers")
@@ -82,7 +95,7 @@ func main() {
 	visaHandler := handlers.NewVisaHandler(Validator, visaUsecase)
 
 	// Initialize middleware
-	authMiddleware := middleware.NewAuthMiddleware(cfg.Server, db).Handler()
+	authMiddleware := middleware.NewAuthMiddleware(cfg.ServerConfig, cfg.JWTConfig, db).Handler()
 
 	// Setup server
 	app := fiber.New(
@@ -102,27 +115,49 @@ func main() {
 		),
 	)
 
-	zap.L().Debug("Linking http routes")
-	v1 := app.Group("/api/v1")
-	v1.Use(authMiddleware)
+	zap.L().Debug("Linking http routes..")
 
+	// API prefix (base route)
+	v1 := app.Group("/api/v1")
+
+	// Public routes
 	v1.Get(
 		"/protocol", func(c *fiber.Ctx) error {
 			return c.SendString(c.Protocol()) // => https
 		},
 	)
 	v1.Post("/register", userHandler.Register)
-	v1.Post("/login", userHandler.Login)
+	v1.Post("/login",    userHandler.Login)
+	//v1.Get("/posts",     postHandler.GetPosts)
+	//v1.Get("/posts/:id", postHandler.GetPost)
 
-	// Visa routes
-	visaGroup :=  v1.Group("/visa")
+	// Authenticated routes
+	accountGroup := v1.Group("/account")
+	accountGroup.Use(authMiddleware)
+
+	// Visa routes (authenticated)
+	visaGroup :=  accountGroup.Group("/visa")
 	visaGroup.Post("/apply", visaHandler.SubmitVisaApplication)
 
-	// Moderator routes (only moderator and superadmin can access)
-	moderatorGroup := v1.Group("/moderator")
-	moderatorGroup.Use(middleware.ModeratorOnly())
+	// Agent routes (authenticated)
+	agentGroup := v1.Group("/agent")
+	agentGroup.Use(middleware.AgentOnly())
+
+	//agentGroup.Get("/dashboard", agentHandler.GetDashboard)
+
+	// Admin routes (authenticated)
+	adminGroup := accountGroup.Group("/admin")
+	adminGroup.Use(middleware.AdminOnly())
+
+	//adminGroup.Get("/dashboard", adminHandler.GetDashboard)
+
+	// SuperAdmin routes (authenticated)
+	superAdminGroup := accountGroup.Group("/superadmin")
+	superAdminGroup.Use(middleware.SuperadminOnly())
+
+	//superAdminGroup.Get("/dashboard", superAdminHandler.GetDashboard)
 
 	// Initialize server
-	zap.S().Debugw("Starting server at port ", cfg.Server.ServerAddress, "...")
-	log.Fatal(app.Listen(cfg.Server.ServerAddress))
+	zap.S().Debugw("Starting server at port ", cfg.ServerConfig.ServerAddress, "...")
+	log.Fatal(app.Listen(cfg.ServerConfig.ServerAddress))
 }
