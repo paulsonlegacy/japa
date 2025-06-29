@@ -85,14 +85,17 @@ func main() {
 	zap.L().Debug("Initializing repositories")
 	userRepo := repository.NewUserRepository(db)
 	visaRepo := repository.NewVisaRepository(db)
+	postRepo := repository.NewPostRepository(db)
 
 	zap.L().Debug("Initializing services")
 	userUsecase := usecase.NewUserUsecase(cfg.JWTConfig, userRepo, db, mailer)
 	visaUsecase := usecase.NewVisaUsecase(visaRepo, db)
+	postUsecase := usecase.NewPostUsecase(postRepo, db)
 
 	zap.L().Debug("Initializing handlers")
 	userHandler := handlers.NewUserHandler(Validator, userUsecase)
 	visaHandler := handlers.NewVisaHandler(Validator, visaUsecase)
+	postHandler := handlers.NewPostHandler(Validator, postUsecase)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(cfg.ServerConfig, cfg.JWTConfig, db).Handler()
@@ -128,7 +131,7 @@ func main() {
 	)
 	v1.Post("/register", userHandler.Register)
 	v1.Post("/login",    userHandler.Login)
-	//v1.Get("/posts",     postHandler.GetPosts)
+	v1.Get("/posts",     postHandler.FetchPosts) // /api/v1/posts?page=2&limit=20
 	//v1.Get("/posts/:id", postHandler.GetPost)
 
 	// Authenticated routes
@@ -149,7 +152,7 @@ func main() {
 	adminGroup := accountGroup.Group("/admin")
 	adminGroup.Use(middleware.AdminOnly())
 
-	//adminGroup.Get("/dashboard", adminHandler.GetDashboard)
+	adminGroup.Post("/posts/create", postHandler.CreatePost)
 
 	// SuperAdmin routes (authenticated)
 	superAdminGroup := accountGroup.Group("/superadmin")

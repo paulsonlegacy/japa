@@ -9,14 +9,16 @@ import (
 
 type Post struct {
 	ID          ulid.ULID      `gorm:"type:char(26);primaryKey"`
-	AuthorID    ulid.ULID      `gorm:"not null"`               // The user who authored the post
+	AuthorID    ulid.ULID      `gorm:"null"`                   // The user who authored the post
 	Author      User           `gorm:"foreignKey:AuthorID"`    // Relation to User
 
 	Title       string         `gorm:"not null"`
 	Content     string         `gorm:"type:text;not null"`     // Full text content
 	Excerpt     string         `gorm:"type:text"`              // Optional excerpt / preview
 	Tags        []byte         `gorm:"type:json"`              // Array of tags (as JSON)
-	IsPaidOnly  bool           `gorm:"default:false"`          // If true, only subscribed users can access
+
+	// Audience control
+	AccessLevel string         `gorm:"column:access_level;default:Subscribed"` // Public, Registered & Subscribed
 
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

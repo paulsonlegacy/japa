@@ -10,18 +10,18 @@ import (
 // data ...map[string]any is to make data/payload optional
 func Success(c *fiber.Ctx, message string, data ...map[string]any) error {
 	if message == "" {
-		message = "success"
+		message = "ok"
 	}
 
 	var payload map[string]any
 	if len(data) > 0 {
-		payload = data[0]
+		payload = data[0] // use firstpayload
 	} else {
-		payload = map[string]any{}
+		payload = map[string]any{} // empty payload
 	}
 
 	return c.Status(fiber.StatusOK).JSON(map[string]any{
-		"message": "ok",
+		"message": message,
 		"status":  "success",
 		"data":    payload,
 	})
