@@ -3,14 +3,13 @@ package config
 
 import "time"
 
-
-// This gives you a singleton-style global access point to your config 
+// This gives you a singleton-style global access point to your config
 // across the app, without having to pass cfg *Config around manually
 // i.e jwtSecret := config.Settings.JWT.JWTSecretKey
 var Settings Config
 
 // Config Types
-type DatabaseConfig struct {
+type DBConfig struct {
 	DBURL        string
 	DBDRIVER     string
 	MaxOpenConns int
@@ -27,7 +26,7 @@ type SMTPConfig struct {
 }
 
 type EmailConfig struct {
-	SMTPConfig  SMTPConfig
+	SMTPConfig SMTPConfig
 }
 
 type JWTConfig struct {
@@ -64,66 +63,67 @@ Only error-level logs → ErrorLogFilePath (e.g., japa-errors.log)
 */
 
 type ServerConfig struct {
-	ServerAddress   string
-	ServerPort      string
+	ServerAddress           string
+	ServerPort              string
 	AuthorizationHeaderPath string
+	TemplatesDir            string
+	AssetsDir               string
 }
 
-type SiteSettings struct {
-	SiteName        string
-	SiteDomain      string
-	SiteEmail       string
-	LogoURL         string
-	TemplateDir     string
+type SiteConfig struct {
+	SiteName   string
+	SiteDomain string
+	SiteEmail  string
+	LogoURL    string
 }
 
 type Config struct {
-	SiteSettings SiteSettings
-	Server       ServerConfig
-	Database     DatabaseConfig
-	Email        EmailConfig
-	JWT          JWTConfig
-	Logging      LoggingConfig
+	SiteConfig       SiteConfig
+	ServerConfig     ServerConfig
+	DBConfig         DBConfig
+	EmailConfig      EmailConfig
+	JWTConfig        JWTConfig
+	LoggingConfig    LoggingConfig
 }
-
 
 // Initialize configurations
 func InitConfig(envFilePath string) *Config {
 	loadEnvFile(envFilePath)
 	cfg := &Config{
-		SiteSettings: SiteSettings{
-			SiteName:      getEnv("SITE_NAME", ""),
-			SiteDomain:    getEnv("SITE_DOMAIN", ""),
-			SiteEmail:     getEnv("SITE_EMAIL", "legacywebhub@gamil.com"),
-			LogoURL:       getEnv("LOGO_URL", ""),
-			TemplateDir:   getEnv("TEMPLATE_DIR", "templates"),
+		SiteConfig: SiteConfig{
+			SiteName:   getEnv("SITE_NAME", ""),
+			SiteDomain: getEnv("SITE_DOMAIN", ""),
+			SiteEmail:  getEnv("SITE_EMAIL", "legacywebhub@gamil.com"),
+			LogoURL:    getEnv("LOGO_URL", ""),
 		},
-		Server: ServerConfig{
-			ServerAddress: getEnv("SERVER_ADDRESS", ":8080"),
+		ServerConfig: ServerConfig{
+			ServerAddress:           getEnv("SERVER_ADDRESS", ":8080"),
 			AuthorizationHeaderPath: "Authorization",
+			TemplatesDir:            getEnv("TEMPLATE_DIR", "templates"),
+			AssetsDir:               getEnv("ASSET_DIR", "assets"),
 		},
-		Database: DatabaseConfig{
-			DBURL:     getEnv("DBURL", ""),
-			DBDRIVER:   getEnv("DBDRIVER", "mysql"),
+		DBConfig: DBConfig{
+			DBURL:        getEnv("DBURL", ""),
+			DBDRIVER:     getEnv("DBDRIVER", "mysql"),
 			MaxOpenConns: 50,
 			MaxIdleConns: 10,
 			MaxIdleTime:  mustParseDuration("15m"),
 			MaxLifeTime:  mustParseDuration("1h"),
 		},
-		Email: EmailConfig{
+		EmailConfig: EmailConfig{
 			SMTPConfig: SMTPConfig{
-				EMAIL_HOST: getEnv("EMAIL_HOST", ""),
-				EMAIL_PORT: getEnvInt("EMAIL_PORT", 465),
+				EMAIL_HOST:     getEnv("EMAIL_HOST", ""),
+				EMAIL_PORT:     getEnvInt("EMAIL_PORT", 465),
 				EMAIL_USERNAME: getEnv("EMAIL_USERNAME", ""),
 				EMAIL_PASSWORD: getEnv("EMAIL_PASSWORD", ""),
 			},
 		},
-		JWT: JWTConfig{
+		JWTConfig: JWTConfig{
 			JWTSecretKey: getEnv("JWT_SECRET_KEY", ""),
 			Issuer:       getEnv("JWT_ISSUER", "japa"),
 			Expiry:       time.Hour * 24,
 		},
-		Logging: LoggingConfig{
+		LoggingConfig: LoggingConfig{
 			EnvType:          getEnv("ENV_TYPE", "LOCAL-DEV"),
 			LogFilePath:      getEnv("LOG_FILE_PATH", "./logs/japa.log"),
 			ErrorLogFilePath: getEnv("ERROR_LOG_FILE_PATH", "./logs/japa-errors.log"),

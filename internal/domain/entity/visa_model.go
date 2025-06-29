@@ -14,7 +14,7 @@ type VisaApplication struct {
 
 	// Optional: provide form fields instead of uploading a form
 	// JSON column for dynamic visa form input
-	VisaFormInput   []byte `gorm:"column:visa_form_input;type:json"` // Or use gorm.io/datatypes
+	VisaFormInput   []byte        `gorm:"column:visa_form_input;type:json"` // Or use gorm.io/datatypes
 	//VisaFormInput    *VisaFormInput `gorm:"foreignKey:VisaApplicationID;references:ID"` // One-to-One relationship (nullable)
 
 	// Optional: signed visa uploaded form

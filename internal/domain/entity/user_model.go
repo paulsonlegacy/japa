@@ -20,5 +20,8 @@ type User struct {
 	CreatedAt         time.Time `gorm:"column:created_at;autoCreateTime"`         // GORM auto timestamps
 	UpdatedAt         time.Time `gorm:"column:updated_at;autoUpdateTime"`         // GORM auto timestamps
 
-	VisaApplications []VisaApplication `gorm:"foreignKey:UserID"`
+	// Subscription relation
+	Subscriptions     []Subscription `gorm:"foreignKey:UserID;references:ID"`
+	// Visa application relation
+	VisaApplications  []VisaApplication `gorm:"foreignKey:UserID;references:ID"`
 }

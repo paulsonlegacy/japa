@@ -15,12 +15,13 @@ import (
 // AuthMiddleware struct holds server configuration for authentication purposes
 type AuthMiddleware struct {
 	config.ServerConfig
+	config.JWTConfig
 	DB *gorm.DB
 }
 
 // NewAuthMiddleware initializes a new instance of AuthMiddleware
-func NewAuthMiddleware(serverConfig config.ServerConfig, db *gorm.DB) *AuthMiddleware {
-	return &AuthMiddleware{serverConfig, db}
+func NewAuthMiddleware(serverConfig config.ServerConfig, JWTConfig config.JWTConfig,  db *gorm.DB) *AuthMiddleware {
+	return &AuthMiddleware{serverConfig, JWTConfig, db}
 }
 
 // List of routes that do not require authentication
@@ -46,7 +47,7 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 		token := c.Get(middleware.AuthorizationHeaderPath)
 
 		// Validate the token
-		claims, err := pkg.ValidateJWT(token)
+		claims, err := pkg.ValidateJWT(token, middleware.JWTConfig)
 		if err != nil {
 			// Log debug information if token validation fails
 			zap.L().Debug(
@@ -61,16 +62,21 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 			return response.Unauthorized(c, "Unauthorized access")
 		}
 
-		sub := claims["sub"]
+		////// USER LOGIC & AUTHORIZATION //////
 
-		// User placeholder 
+		userID := claims["sub"]
 		var user entity.User
-
-		// Fetch user from DB
+		
+		// Fetch user basic info
 		if err := middleware.DB.
-		Select("full_name", "username", "role", "banned_until", "ban_reason").
-		First(&user, "id = ?", sub).Error; err != nil {
+			Select("id", "full_name", "username", "role", "banned_until", "ban_reason").
+			First(&user, "id = ?", userID).Error; err != nil {
 			return response.InternalServerError(c)
+		}
+
+		// Checking if user info matches with jwt custom claims
+		if user.Username != claims["username"] || user.Role != claims["role"] {
+			return response.Conflict(c)
 		}
 
 		// Checking if user is banned
@@ -80,11 +86,52 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 			}
 		}
 
-		// Save base user data to context
-		c.Locals("user_id", sub)
-		c.Locals("fullname", user.FullName)
+		////// SUBSCRIPTION LOGIC & CANCELATION ///////
+
+		var userSubscriptions []entity.Subscription
+
+		// Fetch all subscriptions for this user
+		if err := middleware.DB.
+			Where("user_id = ?", user.ID).
+			//Where("status = ?", "active").
+			//Where("expires_at > ?", time.Now()).
+			Order("started_at DESC").
+			Find(&userSubscriptions).Error; err != nil {
+			return response.InternalServerError(c)
+		}
+
+		// User active subscription
+		var userActiveSubscription *entity.Subscription
+
+		// Loop through subscriptions to expire outdated ones
+		// and pick the latest active
+		for i := range userSubscriptions {
+			s := &userSubscriptions[i]
+
+			// Check if expired and status still active
+			if s.ExpiresAt.Before(time.Now()) && s.Status == "active" {
+				s.Status = "expired"
+				if err := middleware.DB.Model(s).Update("status", "expired").Error; err != nil {
+					// Log error
+					zap.L().Error(
+						"Failure updating subscription status",
+						zap.String("subscriptionID", s.ID.String()),
+					)
+				}
+			}
+
+			// If still active, pick as userActiveSubscription
+			if s.Status == "active" && s.ExpiresAt.After(time.Now()) && userActiveSubscription == nil {
+				userActiveSubscription = s
+			}
+		}
+
+		// Save user data to context
+		c.Locals("user_id", userID)
+		c.Locals("full_name", user.FullName)
 		c.Locals("username", user.Username)
 		c.Locals("role", user.Role)
+		c.Locals("subscription", userActiveSubscription)
 
 		// Continue to next middleware/handler
 		return c.Next()
@@ -116,15 +163,15 @@ func RoleRequired(allowedRoles ...string) fiber.Handler {
 }
 
 
-// AdminOnly returns middleware for admin and superadmin only
-func AdminOnly() fiber.Handler {
-	return RoleRequired("admin", "superadmin")
+// AgentOnly returns middleware for agents and admins only
+func AgentOnly() fiber.Handler {
+	return RoleRequired("agent", "admin", "superadmin")
 }
 
 
-// ModeratorOnly returns middleware for moderator and superadmin only
-func ModeratorOnly() fiber.Handler {
-	return RoleRequired("moderator", "superadmin")
+// AdminOnly returns middleware for admins only
+func AdminOnly() fiber.Handler {
+	return RoleRequired("admin", "superadmin")
 }
 
 
