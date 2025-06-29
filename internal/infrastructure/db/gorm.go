@@ -14,7 +14,7 @@ import (
 
 
 // Initialize GORM DB
-func NewGormDB(cfg config.DatabaseConfig) *gorm.DB {
+func NewGormDB(cfg config.DBConfig) *gorm.DB {
 	// DSN
 	dsn := cfg.DBURL
 
@@ -45,6 +45,13 @@ func NewGormDB(cfg config.DatabaseConfig) *gorm.DB {
 	// Auto-migrate all models
 	if err := gormDB.AutoMigrate(
 		&entity.User{},
+		&entity.Subscription{},
+		&entity.Purchase{},
+		&entity.Plan{},
+		&entity.PlanFeature{},
+		&entity.Post{},
+		&entity.Comment{},
+		//&entity.Reply{},
 		//&entity.VisaFormInput{},
 		&entity.VisaApplication{},
 		&entity.Document{},

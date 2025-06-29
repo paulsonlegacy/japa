@@ -6,6 +6,7 @@ import (
 	//"fmt"
 	"time"
 
+	"japa/internal/config"
 	"japa/internal/app/http/dto/request"
 	"japa/internal/domain/entity"
 	"japa/internal/domain/repository"
@@ -14,7 +15,6 @@ import (
 	"japa/internal/util"
 
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -22,19 +22,15 @@ import (
 
 // UserUsecase handles user-related business logic
 type UserUsecase struct {
-	Repo *repository.UserRepository
-	DB   *gorm.DB
-	Mail *mailer.SMTPMailer
-}
-
-// Mailer interface allows you to plug in real or mock email senders
-type Mailer interface {
-	SendWelcomeEmail(to string) error
+	JWTConfig config.JWTConfig 
+	Repo      *repository.UserRepository
+	DB        *gorm.DB
+	Mailer      *mailer.ResponsiveMailer
 }
 
 // Initialize UserUsecase
-func NewUserUsecase(repo *repository.UserRepository, db *gorm.DB, mailer *mailer.SMTPMailer) *UserUsecase {
-	return &UserUsecase{Repo: repo, DB: db, Mail: mailer}
+func NewUserUsecase(jwtConfig config.JWTConfig, repo *repository.UserRepository, db *gorm.DB, mailer *mailer.ResponsiveMailer) *UserUsecase {
+	return &UserUsecase{JWTConfig: jwtConfig, Repo: repo, DB: db, Mailer: mailer}
 }
 
 // Registers a new user and sends a welcome email
@@ -44,10 +40,7 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 		zap.L().Info("Saving user to DB..")
 
 		// Hash password
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
+		hashedPassword := pkg.HashAndEncodeArgon2(req.Password, 32)
 
 		user := &entity.User{
 			ID:        util.NewULID(),
@@ -75,7 +68,7 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 
 		go func() {
 			// Simulate email sending
-			err := usecase.Mail.SendViaSMTP(user.Email, emailData)
+			err := usecase.Mailer.Send(user.Email, emailData)
 			done <- err
 		}()
 
@@ -95,20 +88,20 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 
 // Logs in user based on credentials
 func (us *UserUsecase) Login(account string, password string) (string, error) {
-	// Find user by email or ussername 
+	// Find user by account - email or ussername 
 	user, err := us.Repo.FindByEmailOrUsername(account)
 	if err != nil {
 		return "", errors.New("invalid credentials")
 	}
 
 	// Confirm password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
+	isPasswordValid := pkg.Compare(password, user.Password)
+	if !isPasswordValid {
 		return "", errors.New("invalid credentials")
 	}
 
 	// Generate JWT Token
-	token, err := pkg.GenerateJWT(user)
+	token, err := pkg.GenerateJWT(user, us.JWTConfig)
 	if err != nil {
 		return "", err
 	}
