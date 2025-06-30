@@ -131,8 +131,9 @@ func main() {
 	)
 	v1.Post("/register", userHandler.Register)
 	v1.Post("/login",    userHandler.Login)
-	v1.Get("/posts",     postHandler.FetchPosts) // /api/v1/posts?page=2&limit=20
-	//v1.Get("/posts/:id", postHandler.GetPost)
+	v1.Get("/posts",     postHandler.FetchPosts) // api/v1/posts?page=2&limit=20
+	v1.Get("/posts/:post_id/:slug", postHandler.FetchPost)  // posts/01JXYZM4T8HR8PQKJS6E4X2C1Z/seo-tips-for-developers
+
 
 	// Authenticated routes
 	accountGroup := v1.Group("/account")

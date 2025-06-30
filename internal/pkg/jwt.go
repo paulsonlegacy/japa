@@ -16,9 +16,9 @@ func GenerateJWT(user *entity.User, JWTConfig config.JWTConfig) (string, error) 
     // Define the claims payload for the token.
     claims := jwt.MapClaims{
         "sub":      user.ID,        // Standard claim: subject (unique user ID)
-        "fullname": user.FullName,  // Custom claim: user's full name
-        "username": user.Username,  // Custom claim: username
-        "role":     user.Role,      // Custom claim: user role (e.g., "admin")
+        //"fullname": user.FullName,  // Custom claim: user's full name
+        //"username": user.Username,  // Custom claim: username
+        //"role":     user.Role,      // Custom claim: user role (e.g., "admin")
         "exp":      time.Now().Add(JWTConfig.Expiry).Unix(), // Expiration time as UNIX timestamp
         "iss":      JWTConfig.Issuer,  // Issuer identifier
     }

@@ -39,16 +39,17 @@ func (pr *PostRepository) Create(ctx context.Context, post *entity.Post) error {
 }
 
 // Fetch posts paginated
-func (pr *PostRepository) Fetch(ctx context.Context, limit, offset int) ([]request.PostWithAuthor, int64, error) {
+func (pr *PostRepository) FetchPosts(ctx context.Context, limit, offset int) ([]request.PostWithAuthor, int64, error) {
 	var rows []struct {
 		ID          string
 		Title       string
+		Slug        string
 		Content     string
-		Excerpt     string
+		Excerpt     *string
 		TagsRaw     string
 		AccessLevel string
 		CreatedAt   time.Time
-		AuthorName  string
+		AuthorName  *string
 	}
 
 	err := pr.DB.WithContext(ctx).
@@ -56,6 +57,7 @@ func (pr *PostRepository) Fetch(ctx context.Context, limit, offset int) ([]reque
 		Select(`
 			posts.id,
 			posts.title,
+			posts.slug,
 			posts.content,
 			posts.excerpt,
 			posts.tags,
@@ -79,6 +81,7 @@ func (pr *PostRepository) Fetch(ctx context.Context, limit, offset int) ([]reque
 		posts[i] = request.PostWithAuthor{
 			ID:          r.ID,
 			Title:       r.Title,
+			Slug:        r.Slug,
 			Content:     r.Content,
 			Excerpt:     r.Excerpt,
 			CreatedAt:   r.CreatedAt,
@@ -101,4 +104,60 @@ func (pr *PostRepository) Fetch(ctx context.Context, limit, offset int) ([]reque
 	}
 
 	return posts, totalPosts, nil
+}
+
+// Create post
+func (pr *PostRepository) FetchPost(ctx context.Context, postID string) (*request.PostWithAuthor, error) {
+	var row struct {
+		ID          string
+		Title       string
+		Slug        string
+		Content     string
+		Excerpt     *string
+		TagsRaw     string
+		Source      *string
+		AccessLevel string
+		CreatedAt   time.Time
+		AuthorName  *string
+	}
+
+	err := pr.DB.WithContext(ctx).
+		Select(`
+			posts.id,
+			posts.title,
+			posts.slug,
+			posts.content,
+			posts.excerpt,
+			posts.tags,
+			posts.source,
+			posts.access_level,
+			posts.created_at,
+			users.full_name as author_name
+		`).
+		Joins("left join users on users.id = posts.author_id").
+		Where("id = ?", postID).
+		Limit(1).
+		Scan(&row).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	post := request.PostWithAuthor{
+		ID:          row.ID,
+		Title:       row.Title,
+		Content:     row.Content,
+		Excerpt:     row.Excerpt,
+		CreatedAt:   row.CreatedAt,
+		AccessLevel: row.AccessLevel,
+		AuthorName:  row.AuthorName,
+		TagsRaw:     row.TagsRaw,
+	}
+
+	
+	if err := json.Unmarshal([]byte(row.TagsRaw), &post.Tags); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal tags: %w", err)
+	}
+
+	return &post, nil
 }

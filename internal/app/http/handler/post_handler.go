@@ -4,6 +4,8 @@ import (
 	"time"
 	"context"
 	"strconv"
+	"errors"
+	"gorm.io/gorm"
 
 	"japa/internal/app/http/dto/request"
 	"japa/internal/app/http/dto/response"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/oklog/ulid/v2"
 	//"go.uber.org/zap"
 )
 
@@ -40,7 +43,7 @@ func (ph *PostHandler) CreatePost(c *fiber.Ctx) error {
 	}
 
 	// Contexts and timeouts
-	ctx, cancel := context.WithTimeout(context.Background(), 20 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
     defer cancel()
 
 	// Pass to usecase layer
@@ -77,5 +80,30 @@ func (ph *PostHandler) FetchPosts(c *fiber.Ctx) error {
 	return response.Success(c, "", map[string]any{
 		"items": posts,
 		"total": totalPosts,
+	})
+}
+
+func (ph *PostHandler) FetchPost(c *fiber.Ctx) error {
+	postID := c.Params("post_id")
+
+	if _, err := ulid.Parse(postID); err != nil {
+		return response.BadRequest(c, "invalid post id format")
+	}
+
+	// Context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call usecase
+	post, err := ph.Usecase.FetchPost(ctx, postID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.NotFound(c, "post not found")
+		}
+		return response.InternalServerError(c, err.Error())
+	}
+
+	return response.Success(c, "", map[string]any{
+		"items": post,
 	})
 }

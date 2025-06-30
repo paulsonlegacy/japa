@@ -9,16 +9,20 @@ import (
 
 type Post struct {
 	ID          ulid.ULID      `gorm:"type:char(26);primaryKey"`
-	AuthorID    ulid.ULID      `gorm:"null"`                   // The user who authored the post
-	Author      User           `gorm:"foreignKey:AuthorID"`    // Relation to User
+	AuthorID    *ulid.ULID      `gorm:"column:author_id;null"`  // The user who authored the post
+	Author      *User           `gorm:"foreignKey:AuthorID"`    // Relation to User
 
-	Title       string         `gorm:"not null"`
-	Content     string         `gorm:"type:text;not null"`     // Full text content
-	Excerpt     string         `gorm:"type:text"`              // Optional excerpt / preview
-	Tags        []byte         `gorm:"type:json"`              // Array of tags (as JSON)
+	Title       string         `gorm:"column:title;type:text;not null"`
+	Slug        string         `gorm:"column:slug;type:text;uniqueIndex;not null"`
+	Content     string         `gorm:"column:content;type:text;not null"`     // Full text content
+	Excerpt     *string        `gorm:"column:excerpt;type:text;null"`         // Optional excerpt / preview
+	Tags        *[]byte        `gorm:"column:tags;type:json;null"`              // Array of tags (as JSON)
 
-	// Audience control
-	AccessLevel string         `gorm:"column:access_level;default:Subscribed"` // Public, Registered & Subscribed
+	// Source
+	Source      *string        `gorm:"column:source;type:text;null"`
+
+	// Audience controlSubscribed
+	AccessLevel string         `gorm:"column:access_level;not null;default:Subscribed"` // Public, Registered & Subscribed
 
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

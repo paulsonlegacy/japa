@@ -74,11 +74,6 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 			return response.InternalServerError(c)
 		}
 
-		// Checking if user info matches with jwt custom claims
-		if user.Username != claims["username"] || user.Role != claims["role"] {
-			return response.Conflict(c)
-		}
-
 		// Checking if user is banned
 		if user.Role != "admin" && user.Role != "superadmin" && user.BannedUntil != nil {
 			if time.Now().Before(*user.BannedUntil) { // If now is before the blocked datetime
