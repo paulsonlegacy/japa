@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"time"
+    "crypto/rand"
     "encoding/base64"
 
 	"japa/internal/config"
@@ -29,7 +30,8 @@ func GenerateJWT(user *entity.User, JWTConfig config.JWTConfig) (string, error) 
     // Sign the token with your secret key (Base64-encoded from config).
     signedToken, err := token.SignedString([]byte(encodeBase64(JWTConfig.JWTSecretKey)))
 
-    // Return the signed JWT string and any error encountered during signing.
+    // Return the signed JWT string 
+    // and any error encountered during signing.
     return signedToken, err
 }
 
@@ -70,4 +72,15 @@ func ValidateJWT(tokenString string, JWTConfig config.JWTConfig) (jwt.MapClaims,
 // encodeBase64 encodes a string to standard Base64.
 func encodeBase64(input string) string {
 	return base64.StdEncoding.EncodeToString([]byte(input))
+}
+
+
+
+// GenerateRefreshToken generate refresh tokens
+func GenerateRefreshToken() (string, error) {
+    b := make([]byte, 32)
+    if _, err := rand.Read(b); err != nil {
+        return "", err
+    }
+    return base64.URLEncoding.EncodeToString(b), nil
 }

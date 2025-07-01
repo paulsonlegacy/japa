@@ -129,8 +129,10 @@ func main() {
 			return c.SendString(c.Protocol()) // => https
 		},
 	)
-	v1.Post("/register", userHandler.Register)
-	v1.Post("/login",    userHandler.Login)
+	v1.Post("/auth/register", userHandler.Register)
+	v1.Post("/auth/login",    userHandler.Login)
+	v1.Get("/auth/logout",    userHandler.Logout)
+	v1.Post("/auth/refresh", userHandler.RefreshToken)
 	v1.Get("/posts",     postHandler.FetchPosts) // api/v1/posts?page=2&limit=20
 	v1.Get("/posts/:post_id/:slug", postHandler.FetchPost)  // posts/01JXYZM4T8HR8PQKJS6E4X2C1Z/seo-tips-for-developers
 

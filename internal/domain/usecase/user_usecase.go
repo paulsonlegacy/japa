@@ -22,10 +22,10 @@ import (
 
 // UserUsecase handles user-related business logic
 type UserUsecase struct {
-	JWTConfig config.JWTConfig 
+	JWTConfig  config.JWTConfig 
 	Repo      *repository.UserRepository
 	DB        *gorm.DB
-	Mailer      *mailer.ResponsiveMailer
+	Mailer    *mailer.ResponsiveMailer
 }
 
 // Initialize UserUsecase
@@ -35,7 +35,7 @@ func NewUserUsecase(jwtConfig config.JWTConfig, repo *repository.UserRepository,
 
 // Registers a new user and sends a welcome email
 func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.CreateUserRequest) error {
-	return usecase.DB.Transaction(func(tx *gorm.DB) error {
+	return usecase.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Save user
 		zap.L().Info("Saving user to DB..")
 
@@ -55,7 +55,7 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 		}
 
 
-		if err := usecase.Repo.Create(tx, user); err != nil {
+		if err := usecase.Repo.CreateUser(ctx, tx, user); err != nil {
 			return err // rollback
 		}
 
@@ -77,7 +77,7 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 				if err != nil {
 					return err // rollback
 				}
-			case <-time.After(45 * time.Second):
+			case <-time.After(30 * time.Second):
 				return errors.New("email send timeout") // rollback
 		}
 
@@ -87,24 +87,66 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 }
 
 // Logs in user based on credentials
-func (us *UserUsecase) Login(account string, password string) (string, error) {
-	// Find user by account - email or ussername 
-	user, err := us.Repo.FindByEmailOrUsername(account)
+func (us *UserUsecase) LoginUser(ctx context.Context, account string, password string) (string, string, error) {
+	/*
+	// Note that if only one device is to be logged in at a time,
+	// Delete previous user refresh tokens before saving a new one,
+	// That way  only one device can be signed in at a time
+	*/
+	
+	// Find user
+	user, err := us.Repo.FindUserByEmailOrUsername(ctx, account)
 	if err != nil {
-		return "", errors.New("invalid credentials")
+		return "", "", errors.New("invalid credentials")
 	}
 
-	// Confirm password
-	isPasswordValid := pkg.Compare(password, user.Password)
-	if !isPasswordValid {
-		return "", errors.New("invalid credentials")
+	// Verify password
+	if !pkg.Compare(password, user.Password) {
+		return "", "", errors.New("invalid credentials")
 	}
 
-	// Generate JWT Token
-	token, err := pkg.GenerateJWT(user, us.JWTConfig)
+	// Generate access JWT
+	accessToken, err := pkg.GenerateJWT(user, us.JWTConfig)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return token, nil
+	// Generate refresh token
+	refreshToken, err := pkg.GenerateRefreshToken()
+	if err != nil {
+		return "", "", err
+	}
+
+	// Saving refresh token to DB
+	newToken := &entity.RefreshToken{
+		UserID:    user.ID,
+		Token:     refreshToken,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(30 * 24 * time.Hour), // 30 days
+	}
+
+	// Store refresh token in DB if you like:
+	if err := us.Repo.SaveRefreshToken(ctx, newToken); err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+// Refresh token provider
+func (usecase *UserUsecase) Logout(ctx context.Context, refreshToken string) error {
+	if err := usecase.Repo.DeleteRefreshToken(ctx, refreshToken); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (usecase *UserUsecase) GetRefreshToken(ctx context.Context, refreshToken string) (*entity.RefreshToken, error) {
+	var token entity.RefreshToken
+	if err := usecase.DB.WithContext(ctx).First(&token, "token = ?", refreshToken).Error; err != nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return &token, nil
 }
