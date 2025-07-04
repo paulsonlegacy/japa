@@ -51,6 +51,7 @@ func NewGormDB(cfg config.DBConfig) *gorm.DB {
 		&entity.PlanFeature{},
 		&entity.Post{},
 		&entity.Comment{},
+		&entity.ScrapedPost{},
 		//&entity.Reply{},
 		//&entity.VisaFormInput{},
 		&entity.VisaApplication{},

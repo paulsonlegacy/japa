@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"time"
+	"context"
 	"path/filepath"
 
 	"japa/internal/config"
@@ -11,6 +13,7 @@ import (
 	"japa/internal/infrastructure/db"
 	"japa/internal/infrastructure/logging"
 	"japa/internal/infrastructure/mail"
+	"japa/internal/infrastructure/scraper"
 	"japa/internal/domain/repository"
 	"japa/internal/domain/usecase"
 	"japa/internal/app/http/middleware"
@@ -50,8 +53,9 @@ func init() {
 	})
 }
 
-// Application entry point
-func main() {
+
+func main() { // Application entry point
+
 	// Initialize configurations
 	log.Println(ENV_PATH)
 	cfg := config.InitConfig(ENV_PATH)
@@ -60,9 +64,13 @@ func main() {
 	logger := logging.InitLogger(cfg.LoggingConfig)
 	defer logger.Sync()
 
-	// Initialize DB
+	// Initialize DB & DB models
 	zap.L().Debug("Initializing database connection")
-	db := db.NewGormDB(cfg.DBConfig)
+	db := db.NewGormDB(cfg.DBConfig) // Runs migrations internally
+
+	// Global context and graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Initialize mailing providers
 	zap.L().Debug("Initializing mailing providers")
@@ -80,6 +88,21 @@ func main() {
 		},
 	}
 
+	// Initialize scrapers
+	japacontentScraper := &scraper.JapaContentScraper{
+		Logger: logger,
+		DB:     db,
+	}
+	multiScraper := &scraper.MultiScraper{
+		Scrapers: []scraper.Scraper{
+			japacontentScraper,
+		},
+		Logger:   logger,
+		Interval: 7 * 24 * time.Hour,
+	}
+
+	// Start the scraper with the same context app uses
+	multiScraper.Run(ctx)
 
 	// Initialize app functions
 	zap.L().Debug("Initializing repositories")

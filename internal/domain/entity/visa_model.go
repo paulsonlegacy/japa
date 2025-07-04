@@ -28,7 +28,7 @@ type VisaApplication struct {
 	Agent           *User         `gorm:"foreignKey:AgentID"` // The agent assigned to the application
 
 	// Track status of the application
-	Status          *string       `gorm:"column:status;null;default:'Pending'"` // The status of the application (e.g., "Pending", "Submitted", "Under Review", "Approved"  etc.)
+	Status          *string       `gorm:"column:status;null;default:'pending'"` // The status of the application (e.g., "pending", "submitted", "under review", "approved"  etc.)
 	Feedback        *string       `gorm:"column:feedback;null"` // Feedback from the embassy or agent
 
 	// Timestamps

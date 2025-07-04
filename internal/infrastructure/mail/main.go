@@ -1,5 +1,11 @@
 package mailer
 
+// For responsiveness, all mail providers 
+// and functions must satisfy this interface
+type Mailer interface {
+	Send(to any, emailData *EmailData) error
+}
+
 // ResponsiveMailer tries multiple mail providers in order until one succeeds.
 type ResponsiveMailer struct {
 	Providers []Mailer // List of mailers to try, in priority order

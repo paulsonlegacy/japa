@@ -17,7 +17,7 @@ type Subscription struct {
 	PlanID      ulid.ULID  `gorm:"column:plan_id;not null"` // FK to Plan
 	Plan        Plan       `gorm:"foreignKey:PlanID"`
 
-	Status      string     `gorm:"column:status;not null"` // "active", "canceled", "expired"
+	Status      string     `gorm:"column:status;not null;default:'active'"` // "active", "canceled", "expired"
 
 	StartedAt   time.Time  `gorm:"column:started_at;not null"` // When subscription began
 	ExpiresAt   time.Time  `gorm:"column:expires_at;not null"` // When it ends
