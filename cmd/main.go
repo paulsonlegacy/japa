@@ -7,6 +7,8 @@ import (
 	"time"
 	"context"
 	"path/filepath"
+	"os/signal"
+	"syscall"
 
 	"japa/internal/config"
 	"japa/internal/app/http/handler"
@@ -72,6 +74,17 @@ func main() { // Application entry point
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Create a channel to listen for interrupt signals (Ctrl+C, SIGTERM)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Launch a goroutine that waits for shutdown signal
+	go func() {
+		sig := <-quit
+		zap.L().Info("Shutdown signal received", zap.String("signal", sig.String()))
+		cancel() // This will cancel ctx and tell all background tasks to exit
+	}()
+
 	// Initialize mailing providers
 	zap.L().Debug("Initializing mailing providers")
 	smtpMailer := mailer.NewSMTPMailer(
@@ -101,7 +114,8 @@ func main() { // Application entry point
 		Interval: 7 * 24 * time.Hour,
 	}
 
-	// Start the scraper with the same context app uses
+	// Start the scraper with 
+	// the same context app uses
 	multiScraper.Run(ctx)
 
 	// Initialize app functions
@@ -153,8 +167,8 @@ func main() { // Application entry point
 		},
 	)
 	v1.Post("/auth/register", userHandler.Register)
-	v1.Post("/auth/login",    userHandler.Login)
-	v1.Get("/auth/logout",    userHandler.Logout)
+	v1.Post("/auth/login", userHandler.Login)
+	v1.Get("/auth/logout", userHandler.Logout)
 	v1.Post("/auth/refresh", userHandler.RefreshToken)
 	v1.Get("/posts",     postHandler.FetchPosts) // api/v1/posts?page=2&limit=20
 	v1.Get("/posts/:post_id/:slug", postHandler.FetchPost)  // posts/01JXYZM4T8HR8PQKJS6E4X2C1Z/seo-tips-for-developers
@@ -186,7 +200,19 @@ func main() { // Application entry point
 
 	//superAdminGroup.Get("/dashboard", superAdminHandler.GetDashboard)
 
-	// Initialize server
+	// Initialize Fiber server in background
 	zap.S().Debugw("Starting server at port ", cfg.ServerConfig.ServerAddress, "...")
-	log.Fatal(app.Listen(cfg.ServerConfig.ServerAddress))
+	go func() {
+		if err := app.Listen(cfg.ServerConfig.ServerAddress); err != nil {
+			zap.L().Fatal("Fiber server error", zap.Error(err))
+		}
+	}()
+
+	// Wait for shutdown
+	<-ctx.Done()
+	zap.L().Info("Shutting down services...")
+	// Gracefully shut down Fiber server
+	if err := app.Shutdown(); err != nil {
+		zap.L().Error("Error shutting down Fiber", zap.Error(err))
+	}
 }
