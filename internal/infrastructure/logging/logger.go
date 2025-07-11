@@ -2,6 +2,8 @@ package logging
 
 import (
 	"os"
+	"path/filepath"
+	
 	"japa/internal/config"
 
 	"go.uber.org/zap"
@@ -18,6 +20,12 @@ var Logger *zap.Logger
 // Supports both custom logger (Logger.Info) and zap global (zap.L().Info).
 func InitLogger(cfg config.LoggingConfig) *zap.Logger {
 	var err error
+
+	// Ensure the logs directory exists
+	err = os.MkdirAll(filepath.Dir(cfg.LogFilePath), os.ModePerm)
+	if err != nil {
+		panic("could not create log directory: " + err.Error())
+	}
 
 	// Open general log file (INFO, DEBUG, etc.)
 	logFile, err := os.OpenFile(cfg.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

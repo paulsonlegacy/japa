@@ -33,11 +33,14 @@
 
 ### 💳 Subscription & Monetization
 - **Free Tier**
+  - Blog access
   - Access to limited country information
   - Basic AI recommendations
 
 - **Premium Tier (Monthly/Yearly)**
+  - Free tier +
   - Full AI recommendation access
+  - Defined number of visa application per month
   - Detailed migration planning
   - Track all applications in one place
   - Alerts & premium support
@@ -54,19 +57,21 @@
 ---
 
 ### ⚙️ Admin Panel (Future Scope)
+- Blog and content management
 - Manage user accounts & subscriptions
 - Update country data & migration paths
-- Monitor AI interaction and suggestions
+- Monitor AI dataset, interaction and suggestions
 
 ---
 
 ### 🛠️ Technical Stack & Integrations
-- **Backend**: Golang (Gin framework)
-- **AI/ML**: Go-Python interface for AI suggestion engine
+- **Backend**: Golang (Go-Fiber framework)
+- **Mailing**
+- **AI/ML**:  Gemini/GPT
 - **Database**: PostgreSQL / MySQL
 - **Cache**: Redis
-- **Payments**: Stripe, Paystack, Flutterwave
-- **Hosting**: Railway, Fly.io, DigitalOcean, or VPS
+- **Payments**: Paystack, Flutterwave
+- **Hosting**: Railway, DigitalOcean, or VPS
 
 
 ### creative and meaningful name suggestions:
@@ -84,20 +89,12 @@
 10. **Wayfare** – Classy and related to travel (from "wayfaring")
 11. **japa**
 12. **naijanormad**
-13. **japanormad**
-
----
-
-### 🧠 AI & Smart Assistance Twist  
+13. **japanormad** 
 11. **MigrateIQ** – Smart migration assistant  
 12. **RouteGenie** – Feels like an AI suggesting travel/migration paths  
 13. **VisaBot** – If you want a bot/AI feel  
 14. **PathMentor** – A platform that guides users to the right paths  
-15. **JourneyWise** – Smart guide through migration and visa processes  
-
----
-
-### ✨ Afro-Inspired Suggestions (Nigerian/Local Touch)  
+15. **JourneyWise** – Smart guide through migration and visa processes   
 16. **JapaHub** – If you want to embrace the popular “japa” term with a modern twist  
 17. **Naija2World** – From Nigeria to the world  
 18. **WakaNow Pro** – Like “waka” (pidgin for "move/travel"), but distinct from the existing Wakanow brand  
