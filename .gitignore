@@ -2,6 +2,7 @@
 bin/
 
 # Files
+.env
 *.txt
 *.docx
 internal/config/*env

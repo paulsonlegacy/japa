@@ -1,24 +1,25 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
-	"time"
-	"context"
-	"path/filepath"
 	"os/signal"
+	"path/filepath"
 	"syscall"
+	"time"
 
-	"japa/internal/config"
 	"japa/internal/app/http/handler"
+	"japa/internal/app/http/middleware"
+	"japa/internal/config"
+	"japa/internal/domain/repository"
+	"japa/internal/domain/usecase"
 	"japa/internal/infrastructure/db"
 	"japa/internal/infrastructure/logging"
 	"japa/internal/infrastructure/mail"
 	"japa/internal/infrastructure/scraper"
-	"japa/internal/domain/repository"
-	"japa/internal/domain/usecase"
-	"japa/internal/app/http/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -34,19 +35,29 @@ var (
 	Validator *validator.Validate = validator.New() // Initialize validator
 )
 
-// init() runs before main function is executed
+// init runs before main function is executed
+// used for setting configuration and global variables
 func init() {
-	// init() Usage – Prepares paths and server variables before main()
 
-	// Setting BASE path from this file
-	dir, err := os.Getwd()
-	if err != nil {
-		panic(err)
+	// Try getting current working directory -(good for `go run`)
+	wd, err := os.Getwd()
+	if err == nil {
+		BASE_PATH = wd
 	}
-	BASE_PATH = dir // Sets the root directory dynamically
 
-	// Setting env path
-	ENV_PATH = filepath.Join(BASE_PATH, "internal/config/.env") // ENV file
+	// If .env not found in wd, fallback to using os.Executable()
+	if _, statErr := os.Stat(filepath.Join(BASE_PATH, ".env")); os.IsNotExist(statErr) {
+		exPath, err := os.Executable()
+		if err != nil {
+			fmt.Println("Failed to get executable path:", err)
+		} else {
+			BASE_PATH = filepath.Dir(filepath.Dir(exPath)) // from /app/cmd/main
+		}
+	}
+
+	// Setting .env path
+	ENV_PATH = filepath.Join(BASE_PATH, ".env")
+	fmt.Println("ENV Path:", ENV_PATH)
 
 	// Register custom validator for ulid inputs
 	Validator.RegisterValidation("ulid", func(fl validator.FieldLevel) bool {

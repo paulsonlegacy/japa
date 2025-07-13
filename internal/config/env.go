@@ -30,8 +30,10 @@ func getEnvInt(key string, defaultVal int) int {
 	return val
 }
 
-func loadEnvFile(file string) {
-	if err := godotenv.Load(file); err != nil {
-		fmt.Printf("Error on load environment file: %s", file)
+func loadEnvFile(envPath string) {
+	if err := godotenv.Load(envPath); err != nil {
+		fmt.Printf("Error loading .env file: %s\n", envPath)
+	} else {
+		fmt.Printf("Successfully loaded .env file: %s\n", envPath)
 	}
 }
