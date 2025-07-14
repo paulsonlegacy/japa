@@ -52,7 +52,7 @@ func (ms *MultiScraper) Run(ctx context.Context) {
 			case <-time.After(ms.Interval):
 				// continue
 			case <-ctx.Done():
-				fmt.Println()
+				fmt.Println("Scraper stopped due to shutdown signal")
 				ms.Logger.Info("Scraper stopped due to shutdown signal")
 				return
 			}

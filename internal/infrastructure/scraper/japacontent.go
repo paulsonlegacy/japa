@@ -298,7 +298,7 @@ func (s *JapaContentScraper) SaveScrapedPosts(posts []*request.ScrapedPostReques
 		if err := s.DB.Clauses(clause.OnConflict{
 			DoNothing: true,
 		}).Create(&toInsert).Error; err != nil {
-			return fmt.Errorf("error inserting new posts: %w", err)
+			return fmt.Errorf("error inserting new scraped posts: %w", err)
 		}
 		s.Logger.Info("Saved new scraped posts", zap.Int("count", len(toInsert)))
 	} else {

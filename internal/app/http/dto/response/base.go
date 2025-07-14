@@ -1,13 +1,14 @@
 package response
 
 import (
+	"japa/internal/app/http/dto/apperror"
+
 	"github.com/gofiber/fiber/v2"
 )
 
 
 //  SUCCESS RESPONSES
 
-// data ...map[string]any is to make data/payload optional
 func Success(c *fiber.Ctx, message string, data ...map[string]any) error {
 	if message == "" {
 		message = "ok"
@@ -22,8 +23,9 @@ func Success(c *fiber.Ctx, message string, data ...map[string]any) error {
 
 	return c.Status(fiber.StatusOK).JSON(map[string]any{
 		"message": message,
-		"status":  "success",
-		"data":    payload,
+		"status": "success",
+		"data": payload,
+		"error": map[string]any{},
 	})
 }
 
@@ -39,112 +41,125 @@ func Created(c *fiber.Ctx, data ...map[string]any) error {
 		"message": "created",
 		"status":  "success",
 		"data":    payload,
+		"error": map[string]any{},
 	})
 }
 
 
 //  ERROR RESPONSES
 
-// message ...string is to make message optional
-func BadRequest(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "bad request"
+func BadRequest(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("BAD_REQUEST", "Bad request", "Bad request received")
 	}
 
 	return c.Status(fiber.StatusBadRequest).JSON(map[string]any{
-		"message": msg,
+		"message": appErr.Message,
 		"status":  "failed",
+		"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
 	})
 }
 
-func Unauthorized(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "unauthorized"
+func Unauthorized(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("UNAUTHORIZED", "Unauthorized", "Unauthorized request")
 	}
 
 	return c.Status(fiber.StatusUnauthorized).JSON(map[string]any{
-		"message": msg,
+		"message": appErr.Message,
 		"status":  "failed",
+		"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
 	})
 }
 
-func Forbidden(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "forbidden"
+func Forbidden(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("FORBIDDEN", "Forbidden", "Forbidden request")
 	}
 
 	return c.Status(fiber.StatusForbidden).JSON(map[string]any{
-		"message": msg,
+		"message": appErr.Message,
 		"status":  "failed",
+		"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
 	})
 }
 
-
-func NotFound(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "not found"
+func NotFound(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("NOT_FOUND", "Not found", "Resource not found")
 	}
 
 	return c.Status(fiber.StatusNotFound).JSON(map[string]any{
-		"message": msg,
+		"message": appErr.Message,
 		"status":  "failed",
-		"data": map[string]any{},
+		"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
 	})
 }
 
-func Conflict(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "conflict"
+func Conflict(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("CONFLICT", "Conflict", "Conflicted request")
 	}
 
 	return c.Status(fiber.StatusConflict).JSON(map[string]any{
-		"message": msg,
+		"message": appErr.Message,
 		"status":  "failed",
+		"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
+		
 	})
 }
 
-func Unprocessable(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "unprocessable"
+func Unprocessable(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("UNPROCESSABLE", "Unprocessable", "Unprocessable request")
 	}
 
 	return c.Status(fiber.StatusUnprocessableEntity).JSON(map[string]any{
-		"message": msg,
+		"message": appErr.Message,
 		"status":  "failed",
+		"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
 	})
 }
 
 
-func InternalServerError(c *fiber.Ctx, message ...string) error {
-	var msg string
-	if len(message) > 0 {
-		msg = message[0]
-	} else {
-		msg = "internal server error"
+func InternalServerError(c *fiber.Ctx, appErr *apperror.AppError) error {
+	if appErr == nil {
+		appErr = apperror.New("INTERNAL_SERVER_ERROR", "Internal Server Error", "An error occured while processing request")
 	}
 
 	return c.Status(fiber.StatusInternalServerError).JSON(
 		map[string]any{
-			"message": msg,
+			"message": appErr.Message,
 			"status":  "failed",
+			"error": fiber.Map{
+			"message": appErr.Message,
+			"details": appErr.Details,
+			"code":    appErr.Code,
+		},
 		},
 	)
 }

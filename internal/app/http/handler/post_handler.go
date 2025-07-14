@@ -7,6 +7,7 @@ import (
 	"errors"
 	"gorm.io/gorm"
 
+	"japa/internal/app/http/dto/apperror"
 	"japa/internal/app/http/dto/request"
 	"japa/internal/app/http/dto/response"
 	//"japa/internal/domain/entity"
@@ -39,7 +40,11 @@ func (ph *PostHandler) CreatePost(c *fiber.Ctx) error {
 	// Payload binding
 	var reqBody request.CreatePostRequest
 	if err := reqBody.Bind(c, ph.Validator); err != nil {
-		return response.BadRequest(c)
+		return response.BadRequest(c, apperror.New(
+			apperror.ErrCodeValidation, 
+			"Invalid request", 
+			err.Error(),
+		))
 	}
 
 	// Contexts and timeouts
@@ -48,7 +53,11 @@ func (ph *PostHandler) CreatePost(c *fiber.Ctx) error {
 
 	// Pass to usecase layer
 	if err := ph.Usecase.CreatePost(ctx, reqBody); err != nil {
-		return response.InternalServerError(c, err.Error())
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeDatabase, 
+			"Something went wrong while creating post", 
+			err.Error(),
+		))
 	}
 
 	return response.Success(c, "Post created")
@@ -74,7 +83,11 @@ func (ph *PostHandler) FetchPosts(c *fiber.Ctx) error {
 	// Call usecase
 	posts, totalPosts, err := ph.Usecase.FetchPosts(ctx, limit, offset)
 	if err != nil {
-		return response.InternalServerError(c, err.Error())
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeFetchPosts,
+			"Error fetching posts",
+			err.Error(),
+		))
 	}
 
 	return response.Success(c, "", map[string]any{
@@ -87,7 +100,11 @@ func (ph *PostHandler) FetchPost(c *fiber.Ctx) error {
 	postID := c.Params("post_id")
 
 	if _, err := ulid.Parse(postID); err != nil {
-		return response.BadRequest(c, "invalid post id format")
+		return response.BadRequest(c, apperror.New(
+			apperror.ErrCodeInvalidID,
+			"invalid post id format",
+			err.Error(),
+		))
 	}
 
 	// Context with timeout
@@ -98,9 +115,17 @@ func (ph *PostHandler) FetchPost(c *fiber.Ctx) error {
 	post, err := ph.Usecase.FetchPost(ctx, postID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return response.NotFound(c, "post not found")
+			return response.NotFound(c, apperror.New(
+				apperror.ErrCodePostNotFound,
+				"Post not found",
+				err.Error(),
+			))
 		}
-		return response.InternalServerError(c, err.Error())
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeInternalServer,
+			"Error occured while fetching post",
+			err.Error(),
+		))
 	}
 
 	return response.Success(c, "", map[string]any{

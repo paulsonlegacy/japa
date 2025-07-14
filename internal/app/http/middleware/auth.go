@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v2"
 	"japa/internal/config"
+	"japa/internal/app/http/dto/apperror"
 	"japa/internal/app/http/dto/response"
 	"japa/internal/pkg"
 	"japa/internal/domain/entity"
@@ -59,7 +60,7 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 				zap.String("user_agent", c.Get(fiber.HeaderUserAgent)),
 				zap.Any("headers", c.GetReqHeaders()),
 			)
-			return response.Unauthorized(c, "Unauthorized access")
+			return response.Unauthorized(c, apperror.NewUnauthorizedErr(err.Error()))
 		}
 
 		////// USER LOGIC & AUTHORIZATION //////
@@ -71,7 +72,7 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 		if err := middleware.DB.
 			Select("id", "full_name", "username", "role", "banned_until", "ban_reason").
 			First(&user, "id = ?", userID).Error; err != nil {
-			return response.InternalServerError(c)
+			return response.InternalServerError(c, apperror.NewServerErr(err.Error()))
 		}
 
 		// Checking if user is banned
@@ -92,7 +93,7 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 			//Where("expires_at > ?", time.Now()).
 			Order("started_at DESC").
 			Find(&userSubscriptions).Error; err != nil {
-			return response.InternalServerError(c)
+			return response.InternalServerError(c, apperror.NewServerErr(err.Error()))
 		}
 
 		// User active subscription
@@ -142,7 +143,7 @@ func RoleRequired(allowedRoles ...string) fiber.Handler {
 		role, ok := c.Locals("role").(string)
 		if !ok || role == "" {
 			// Role not found in context, maybe user is not authenticated properly
-			return response.Unauthorized(c)
+			return response.Unauthorized(c, apperror.NewUnauthorizedErr("User role cannot be identified"))
 		}
 
 		// Check if user's role matches any allowed role
@@ -153,7 +154,7 @@ func RoleRequired(allowedRoles ...string) fiber.Handler {
 		}
 
 		// If no match found, deny access
-		return response.Forbidden(c)
+		return response.Forbidden(c, apperror.NewForbiddenErr("Access denied for user"))
 	}
 }
 

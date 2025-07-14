@@ -5,6 +5,7 @@ import (
 	"time"
 	"context"
 
+	"japa/internal/app/http/dto/apperror"
 	"japa/internal/app/http/dto/request"
 	"japa/internal/app/http/dto/response"
 	"japa/internal/domain/usecase"
@@ -37,13 +38,21 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 	// Parse req body
 	var reqBody request.CreateUserRequest
 	if err := reqBody.Bind(c, uh.Validator); err != nil {
-		return response.BadRequest(c)
+		return response.BadRequest(c, apperror.New(
+			apperror.ErrCodeValidation, 
+			"Invalid request", 
+			err.Error(),
+		))
 	}
 
 	// Registering user
 	err := uh.Usecase.RegisterUser(c.Context(), reqBody)
 	if err != nil {
-		return response.InternalServerError(c, err.Error())
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeDatabase, 
+			"Something went wrong while creating user", 
+			err.Error(),
+		))
 	}
 
 	// If registeration succeeded
@@ -61,7 +70,11 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 
 	// Parsing incoming payload into user object
 	if err := c.BodyParser(&reqBody); err != nil {
-		return  response.BadRequest(c, "invalid input")
+		return  response.BadRequest(c, apperror.New(
+			apperror.ErrCodeValidation, 
+			"Invalid request", 
+			err.Error(),
+		))
 	}
 
 	// Context with timeout
@@ -71,7 +84,11 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	// Confirming user and generate tokens
 	accessToken, refreshToken, err := uh.Usecase.LoginUser(ctx, reqBody.Account, reqBody.Password)
 	if err != nil || refreshToken == "" {
-		return response.Unauthorized(c, err.Error())
+		return response.Unauthorized(c, apperror.New(
+			apperror.ErrCodeUnauthorized, 
+			"Unable to authorize user", 
+			err.Error(),
+		))
 	}
 
 	// Store refresh token in secure HTTP-only cookie
@@ -96,7 +113,11 @@ func (uh *UserHandler) Logout(c *fiber.Ctx) error {
 	// Fetching refresh token
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken == "" {
-		return  response.BadRequest(c, "No refresh token")
+		return  response.BadRequest(c, apperror.New(
+			apperror.ErrCodeBadRequest,
+ 			"No refresh token",
+			"Refresh token is invalid or does not exist",
+		))
 	}
 
 	// Context with timeout
@@ -105,7 +126,11 @@ func (uh *UserHandler) Logout(c *fiber.Ctx) error {
 
 	// Delete from DB
 	if err := uh.Usecase.Logout(ctx, refreshToken); err != nil {
-		return response.InternalServerError(c, "Failed to revoke token")
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeDatabase,
+			"Failed to revoke token",
+			err.Error(),
+		))
 	}
 
 	// Clear the cookie
@@ -127,7 +152,11 @@ func (uh *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	// get refresh token from cookie
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken == "" {
-		return response.Unauthorized(c, "Missing refresh token")
+		return response.Unauthorized(c, apperror.New(
+			apperror.ErrCodeUnauthorized,
+			"Missing refresh token",
+			"Refresh token is invalid or not found",
+		))
 	}
 
 	// Context with timeout
@@ -137,30 +166,50 @@ func (uh *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	// Lookup token in DB
 	token, err := uh.Usecase.GetRefreshToken(ctx, refreshToken)
 	if err != nil || token == nil {
-		return response.Unauthorized(c, "Invalid refresh token")
+		return response.Unauthorized(c, apperror.New(
+			apperror.ErrCodeUnauthorized,
+			"Invalid refresh token",
+			err.Error(),
+		))
 	}
 
 	// Check if token is expired
 	if time.Now().After(token.ExpiresAt) {
-		return response.Unauthorized(c, "Refresh token expired")
+		return response.Unauthorized(c, apperror.New(
+			apperror.ErrCodeUnauthorized,
+			"Refresh token expired",
+			"Refresh token is expired",
+		))
 	}
 
 	// Fetch the user
 	user, err := uh.Usecase.Repo.FindUserByID(ctx, token.UserID)
 	if err != nil {
-		return response.Unauthorized(c, "User not found")
+		return response.Unauthorized(c, apperror.New(
+			apperror.ErrCodeUserNotFound,
+			"User not found",
+			err.Error(),
+		))
 	}
 
 	// Issue new access token
 	accessToken, err := pkg.GenerateJWT(user, uh.Usecase.JWTConfig)
 	if err != nil {
-		return response.InternalServerError(c, "Could not create token")
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeInternalServer,
+			"Could not create token",
+			err.Error(),
+		))
 	}
 
 	// Rotate refresh token (recommended)
 	newRefreshToken, err := pkg.GenerateRefreshToken()
 	if err != nil {
-		return response.InternalServerError(c, "Could not create refresh token")
+		return response.InternalServerError(c, apperror.New(
+			apperror.ErrCodeInternalServer,
+			"Could not create refresh token",
+			err.Error(),
+		))
 	}
 
 	// Update the DB record
