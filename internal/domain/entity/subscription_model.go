@@ -3,18 +3,18 @@ package entity
 import (
 	"time"
 
-	"github.com/oklog/ulid/v2"
+	//"github.com/oklog/ulid/v2"
 )
 
 
 // Subscription tracks one subscription instance
 type Subscription struct {
-	ID          ulid.ULID  `gorm:"type:char(26);primaryKey"`
+	ID          string     `gorm:"type:char(26);primaryKey"`
 
-	UserID      ulid.ULID  `gorm:"column:user_id;not null"` // FK to User
+	UserID      string     `gorm:"column:user_id;not null"` // FK to User
 	User        User       `gorm:"foreignKey:UserID"`
 
-	PlanID      ulid.ULID  `gorm:"column:plan_id;not null"` // FK to Plan
+	PlanID      string     `gorm:"column:plan_id;not null"` // FK to Plan
 	Plan        Plan       `gorm:"foreignKey:PlanID"`
 
 	Status      string     `gorm:"column:status;not null;default:'active'"` // "active", "canceled", "expired"

@@ -3,13 +3,13 @@ package entity
 import (
 	"time"
 
-	"github.com/oklog/ulid/v2"
+	//"github.com/oklog/ulid/v2"
 	//"gorm.io/datatypes"
 )
 
 type Post struct {
-	ID          ulid.ULID      `gorm:"type:char(26);primaryKey"`
-	AuthorID    *ulid.ULID      `gorm:"column:author_id;null"`  // The user who authored the post
+	ID          string          `gorm:"type:char(26);primaryKey"`
+	AuthorID    *string         `gorm:"column:author_id;null"`  // The user who authored the post
 	Author      *User           `gorm:"foreignKey:AuthorID"`    // Relation to User
 
 	Category    string         `gorm:"column:category;type:varchar(12);not null;default:'learn'"` // news, stories, learn
@@ -32,5 +32,5 @@ type Post struct {
 }
 
 /*
-Tags used []byte but can use datatypes.JSON from "gorm.io/datatypes"
+	Tags used []byte but can use datatypes.JSON from "gorm.io/datatypes"
 */

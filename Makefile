@@ -10,6 +10,11 @@ export $(shell sed 's/#.*//g' $(ENV_FILE) | grep -E '^\s*[A-Za-z_][A-Za-z0-9_]*=
 echo-env:
 	@echo "SERVER_PORT = $(SERVER_PORT)"
 
+# Running app tests
+run-test:
+	@echo "🚀 Running tests.."
+	cd test && go test -v ./...
+
 # Build Docker containers
 build:
 	@echo "🚧 Building containers..."

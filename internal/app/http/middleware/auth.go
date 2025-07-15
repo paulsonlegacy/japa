@@ -111,7 +111,7 @@ func (middleware *AuthMiddleware) Handler() fiber.Handler {
 					// Log error
 					zap.L().Error(
 						"Failure updating subscription status",
-						zap.String("subscriptionID", s.ID.String()),
+						zap.String("subscriptionID", s.ID),
 					)
 				}
 			}

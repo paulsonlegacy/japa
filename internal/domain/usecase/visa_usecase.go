@@ -9,7 +9,7 @@ import (
 	"japa/internal/app/http/dto/request"
 	"japa/internal/domain/entity"
 	"japa/internal/domain/repository"
-	"japa/internal/util"
+	//"japa/internal/util"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -34,15 +34,18 @@ func NewVisaUsecase(repo *repository.VisaRepository, db *gorm.DB) *VisaUsecase {
 // Creates a new visa application and sends a confirmation email
 func (usecase *VisaUsecase) CreateVisaApplication(ctx context.Context, req request.CreateVisaApplicationRequest) error {
 	return usecase.DB.Transaction(func(tx *gorm.DB) error {
-		//
+		// Application placeholder
 		var application = &entity.VisaApplication{}
 
 		// 1. Type conversions
-		userID, err := ulid.Parse(req.UserID)
+		var userID string 
+		parsedUserID, err := ulid.Parse(req.UserID)
 		if err != nil {
 			return err
 		}
+		userID = parsedUserID.String()
 
+		// 2. Submitting by given input fields
 		if req.VisaFormInput != nil {
 			var travelDate time.Time
 			if req.VisaFormInput.TravelDate != "" {
@@ -92,7 +95,7 @@ func (usecase *VisaUsecase) CreateVisaApplication(ctx context.Context, req reque
 			}
 
 			application = &entity.VisaApplication{
-				ID:                util.NewULID(),
+				ID:                ulid.Make().String(),
 				UserID:            userID,
 				VisaFormInput:     jsonVisaFormInput,
 				VisaFormURL:       req.VisaFormURL,
@@ -104,7 +107,7 @@ func (usecase *VisaUsecase) CreateVisaApplication(ctx context.Context, req reque
 			}
 
 			application = &entity.VisaApplication{
-				ID:                util.NewULID(),
+				ID:                ulid.Make().String(),
 				UserID:            userID,
 				VisaFormInput:     jsonVisaFormInput,
 				VisaFormURL:       req.VisaFormURL,

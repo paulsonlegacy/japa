@@ -3,15 +3,15 @@ package entity
 import (
 	"time"
 
-	"github.com/oklog/ulid/v2"
+	//"github.com/oklog/ulid/v2"
 )
 
 type Reply struct {
-	ID         ulid.ULID   `gorm:"type:char(26);primaryKey"`
-	CommentID  ulid.ULID   `gorm:"not null"`
+	ID         string   `gorm:"type:char(26);primaryKey"`
+	CommentID  string   `gorm:"not null"`
 	Comment    Comment     `gorm:"foreignKey:CommentID"`
 
-	AuthorID   ulid.ULID   `gorm:"not null"`
+	AuthorID   string   `gorm:"not null"`
 	Author     User        `gorm:"foreignKey:AuthorID"`
 
 	Content    string      `gorm:"type:text;not null"`

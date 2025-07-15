@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"github.com/oklog/ulid/v2"
+	//"github.com/oklog/ulid/v2"
 )
 
 
@@ -23,21 +23,21 @@ type EmergencyContact struct {
 }
 
 type VisaFormInput struct {
-	ID              ulid.ULID    `gorm:"type:char(26);primaryKey"` // Primary Key for the visa application
+	ID               string             `gorm:"type:char(26);primaryKey"` // Primary Key for the visa application
 
-	Destination     string       `gorm:"column:destination;not null"` // Country the user is applying to
-	VisaType        string       `gorm:"column:visa_type;not null"` // Type of visa (e.g., Student, Work, Tourist)
-	TravelDate      time.Time    `gorm:"column:travel_date;not null"` // Travel date for the visa application
-	DurationOfStay  string       `gorm:"column:duration_of_stay;not null"` // Duration of stay (e.g., 3 months, 1 year)
-	Purpose         string       `gorm:"column:purpose;not null"` // Purpose of the travel
-	HasBeenDenied   bool         `gorm:"column:has_been_denied;not null;default:false"` // If the user has been denied a visa before
+	Destination      string             `gorm:"column:destination;not null"` // Country the user is applying to
+	VisaType         string             `gorm:"column:visa_type;not null"` // Type of visa (e.g., Student, Work, Tourist)
+	TravelDate       time.Time          `gorm:"column:travel_date;not null"` // Travel date for the visa application
+	DurationOfStay   string             `gorm:"column:duration_of_stay;not null"` // Duration of stay (e.g., 3 months, 1 year)
+	Purpose          string             `gorm:"column:purpose;not null"` // Purpose of the travel
+	HasBeenDenied    bool               `gorm:"column:has_been_denied;not null;default:false"` // If the user has been denied a visa before
 	
 	// Personal details
-	PersonalInfo       PersonalInfo      `gorm:"embedded"`
+	PersonalInfo     PersonalInfo       `gorm:"embedded"`
 
 	// Emergency contact details
-	EmergencyContact   *EmergencyContact  `gorm:"embedded"`
+	EmergencyContact *EmergencyContact  `gorm:"embedded"`
 
 	// Others
-	Note           *string       `gorm:"column:note;null"` // Internal note for the application
+	Note             *string       `gorm:"column:note;null"` // Internal note for the application
 }

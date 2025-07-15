@@ -5,7 +5,7 @@ import "time"
 
 // Plan defines the different subscription plans you offer
 type Plan struct {
-	ID               int          `gorm:"type:int;primaryKey"`
+	ID               uint          `gorm:"type:int;primaryKey"`
 
 	Name             string       `gorm:"column:name;not null"`          // e.g., "Basic", "Pro"
 	Description      string       `gorm:"column:description;"`           // A description of what this plan includes

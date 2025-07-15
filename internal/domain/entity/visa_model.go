@@ -3,13 +3,13 @@ package entity
 import (
 	"time"
 
-	"github.com/oklog/ulid/v2"
+	//"github.com/oklog/ulid/v2"
 )
 
 // Visa application model
 type VisaApplication struct {
-	ID              ulid.ULID    `gorm:"type:char(26);primaryKey"` // Primary Key for the visa application
-	UserID          ulid.ULID    `gorm:"column:user_id;not null"` // Who applied (ForeignKey to User)
+	ID              string       `gorm:"type:char(26);primaryKey"` // Primary Key for the visa application
+	UserID          string       `gorm:"column:user_id;not null"` // Who applied (ForeignKey to User)
 	User            User         `gorm:"foreignKey:UserID"` // The user who is applying for the visa
 
 	// Optional: provide form fields instead of uploading a form
@@ -21,10 +21,10 @@ type VisaApplication struct {
 	VisaFormURL     *string       `gorm:"column:visa_form_url;null"` // URL to the uploaded visa form (nullable)
 
 	// Supporting documents
-	Documents       []Document   `gorm:"foreignKey:VisaApplicationID;references:ID"` // Foreign Key for the documents
+	Documents       []Document    `gorm:"foreignKey:VisaApplicationID;references:ID"` // Foreign Key for the documents
 
 	// Assigned agent
-	AgentID         *ulid.ULID    `gorm:"column:agent_id;null"` // Foreign Key to the assigned agent (nullable)
+	AgentID         *string       `gorm:"column:agent_id;null"` // Foreign Key to the assigned agent (nullable)
 	Agent           *User         `gorm:"foreignKey:AgentID"` // The agent assigned to the application
 
 	// Track status of the application

@@ -3,17 +3,21 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
+
 	//"fmt"
 	"time"
 
-	"japa/internal/config"
 	"japa/internal/app/http/dto/request"
+	"japa/internal/config"
 	"japa/internal/domain/entity"
 	"japa/internal/domain/repository"
 	"japa/internal/infrastructure/mail"
 	"japa/internal/pkg"
-	"japa/internal/util"
 
+	//"japa/internal/util"
+
+	"github.com/oklog/ulid/v2"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -42,8 +46,11 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 		// Hash password
 		hashedPassword := pkg.HashAndEncodeArgon2(req.Password, 32)
 
+		// Generating user id
+		userID := ulid.Make().String()
+
 		user := &entity.User{
-			ID:        util.NewULID(),
+			ID:        userID,
 			FullName:  req.FullName,
 			Username:  req.Username,
 			Email:     req.Email,
@@ -60,25 +67,13 @@ func (usecase *UserUsecase) RegisterUser(ctx context.Context, req request.Create
 		}
 
 		// 2. Send welcome email in goroutine with timeout
-		zap.L().Info("Forwarding welcome email..")
+		//zap.L().Info("Forwarding welcome email..")
 		emailData := mailer.WelcomeMail(user.Username)
 
-		// Goroutine channel
-		done := make(chan error, 1)
-
-		go func() {
-			// Simulate email sending
-			err := usecase.Mailer.Send(user.Email, emailData)
-			done <- err
-		}()
-
-		select {
-			case err := <-done:
-				if err != nil {
-					return err // rollback
-				}
-			case <-time.After(30 * time.Second):
-				return errors.New("email send timeout") // rollback
+		err := usecase.Mailer.Send(user.Email, emailData)
+		if err != nil {
+			fmt.Println("Welcome mail failed to send")
+			return err // rollback
 		}
 
 		// Everything succeeded

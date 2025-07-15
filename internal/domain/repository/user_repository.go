@@ -5,7 +5,7 @@ import (
 	"context"
 	"japa/internal/domain/entity"
 
-	"github.com/oklog/ulid/v2"
+	//"github.com/oklog/ulid/v2"
 	"gorm.io/gorm"
 )
 
@@ -71,7 +71,7 @@ func (ur *UserRepository) FindUserByRefreshToken(ctx context.Context, refreshTok
 
 
 // Find user by id
-func (ur *UserRepository) FindUserByID(ctx context.Context, userID ulid.ULID) (*entity.User, error) {
+func (ur *UserRepository) FindUserByID(ctx context.Context, userID string) (*entity.User, error) {
 	var user entity.User
 	if err := ur.DB.
 		WithContext(ctx).

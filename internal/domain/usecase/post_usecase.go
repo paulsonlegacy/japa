@@ -12,7 +12,7 @@ import (
 	"japa/internal/domain/repository"
 	//"japa/internal/infrastructure/mail"
 	//"japa/internal/pkg"
-	"japa/internal/util"
+	//"japa/internal/util"
 
 	//"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -35,14 +35,15 @@ func NewPostUsecase(repo *repository.PostRepository, db *gorm.DB) *PostUsecase {
 
 // Creates new post
 func (usecase *PostUsecase) CreatePost(ctx context.Context, req request.CreatePostRequest) error {
-	// Convert AuthorID if provided
-	var authorID *ulid.ULID
+	// Validating if provided authorID is a valid ulid
+	var authorID *string
 	if req.AuthorID != nil {
 		parsedID, err := ulid.Parse(*req.AuthorID)
 		if err != nil {
 			return err
 		}
-		authorID = &parsedID
+		idStr := parsedID.String()
+		authorID = &idStr
 	}
 
 	// Set default access level if not provided
@@ -66,7 +67,7 @@ func (usecase *PostUsecase) CreatePost(ctx context.Context, req request.CreatePo
 
 	// Build post model
 	post := &entity.Post{
-		ID:          util.NewULID(),
+		ID:          ulid.Make().String(),
 		AuthorID:    authorID,
 		Title:       req.Title,
 		Slug:        slug,
