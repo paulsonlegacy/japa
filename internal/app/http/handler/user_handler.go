@@ -64,7 +64,7 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 // Login handler
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
 	var reqBody struct {
-		Account string `json:"account"` // Username or Email
+		Account  string `json:"account"` // Username or Email
 		Password string `json:"password"`
 	}
 

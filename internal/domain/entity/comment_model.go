@@ -7,11 +7,11 @@ import (
 )
 
 type Comment struct {
-	ID        string   `gorm:"type:char(26);primaryKey"`
-	PostID    string   `gorm:"not null"`
+	ID        string   `gorm:"type:varchar(60);primaryKey"`
+	PostID    string   `gorm:"type:varchar(60);not null"`
 	Post      Post     `gorm:"foreignKey:PostID"`
 
-	AuthorID  string   `gorm:"not null"`
+	AuthorID  string   `gorm:"type:varchar(60);not null"`
 	Author    User     `gorm:"foreignKey:AuthorID"`
 
 	Content   string   `gorm:"type:text;not null"`

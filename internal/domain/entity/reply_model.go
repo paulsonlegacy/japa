@@ -7,14 +7,14 @@ import (
 )
 
 type Reply struct {
-	ID         string   `gorm:"type:char(26);primaryKey"`
-	CommentID  string   `gorm:"not null"`
-	Comment    Comment     `gorm:"foreignKey:CommentID"`
+	ID         string   `gorm:"type:varchar(60);primaryKey"`
+	CommentID  string   `gorm:"type:varchar(60);not null"`
+	Comment    Comment  `gorm:"foreignKey:CommentID"`
 
 	AuthorID   string   `gorm:"not null"`
-	Author     User        `gorm:"foreignKey:AuthorID"`
+	Author     User     `gorm:"foreignKey:AuthorID"`
 
-	Content    string      `gorm:"type:text;not null"`
+	Content    string   `gorm:"type:text;not null"`
 
 	CreatedAt  time.Time
 	UpdatedAt  time.Time

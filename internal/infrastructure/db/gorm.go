@@ -45,6 +45,7 @@ func NewGormDB(cfg config.DBConfig) *gorm.DB {
 	// Auto-migrate all models
 	if err := gormDB.AutoMigrate(
 		&entity.User{},
+		&entity.RefreshToken{},
 		&entity.Subscription{},
 		&entity.Purchase{},
 		&entity.Plan{},

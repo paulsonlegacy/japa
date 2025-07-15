@@ -8,7 +8,7 @@ import (
 
 // User model
 type User struct {
-	ID                string    `gorm:"type:char(26);primaryKey"`
+	ID                string    `gorm:"type:varchar(60);primaryKey"`
 	FullName          string    `gorm:"column:full_name;type:varchar(100);not null"`                // explicit column name
 	Username          string    `gorm:"column:username;type:varchar(60);uniqueIndex;not null"`     // unique
 	Email             string    `gorm:"column:email;type:varchar(120);uniqueIndex;not null"`        // unique
