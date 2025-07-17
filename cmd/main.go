@@ -199,11 +199,19 @@ func main() { // Application entry point
 
 	//agentGroup.Get("/dashboard", agentHandler.GetDashboard)
 
+	// Author routes (authenticated)
+	authorGroup := v1.Group("/author")
+	authorGroup.Use(middleware.AuthorOnly())
+
+	//authorGroup.Get("/dashboard", authorHandler.GetDashboard)
+	authorGroup.Post("/posts/create", postHandler.CreatePost)
+	authorGroup.Post("/posts/edit/:post_id/", postHandler.CreatePost)
+
 	// Admin routes (authenticated)
 	adminGroup := accountGroup.Group("/admin")
 	adminGroup.Use(middleware.AdminOnly())
 
-	adminGroup.Post("/posts/create", postHandler.CreatePost)
+	//adminGroup.Post("/posts/create", postHandler.CreatePost)
 
 	// SuperAdmin routes (authenticated)
 	superAdminGroup := accountGroup.Group("/superadmin")

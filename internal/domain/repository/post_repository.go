@@ -38,6 +38,11 @@ func (pr *PostRepository) Create(ctx context.Context, post *entity.Post) error {
 	return pr.DB.WithContext(ctx).Create(post).Error
 }
 
+// Update post
+func (pr *PostRepository) Update(ctx context.Context, post *entity.Post) error {
+	return pr.DB.WithContext(ctx).Save(post).Error
+}
+
 // Fetch posts paginated
 func (pr *PostRepository) FetchPosts(ctx context.Context, limit, offset int) ([]request.PostWithAuthor, int64, error) {
 	var rows []struct {
@@ -46,7 +51,8 @@ func (pr *PostRepository) FetchPosts(ctx context.Context, limit, offset int) ([]
 		Slug        string
 		Content     string
 		Excerpt     *string
-		TagsRaw     string
+		Tags        *[]byte
+		Source      *string
 		AccessLevel string
 		CreatedAt   time.Time
 		AuthorName  *string
@@ -61,6 +67,7 @@ func (pr *PostRepository) FetchPosts(ctx context.Context, limit, offset int) ([]
 			posts.content,
 			posts.excerpt,
 			posts.tags,
+			posts.source,
 			posts.access_level,
 			posts.created_at,
 			users.full_name as author_name
@@ -84,14 +91,17 @@ func (pr *PostRepository) FetchPosts(ctx context.Context, limit, offset int) ([]
 			Slug:        r.Slug,
 			Content:     r.Content,
 			Excerpt:     r.Excerpt,
+			Tags:        r.Tags,
+			Source:      r.Source,
 			CreatedAt:   r.CreatedAt,
 			AccessLevel: r.AccessLevel,
 			AuthorName:  r.AuthorName,
-			TagsRaw:     r.TagsRaw,
 		}
 
-		if err := json.Unmarshal([]byte(r.TagsRaw), &posts[i].Tags); err != nil {
-			return nil, 0, fmt.Errorf("failed to unmarshal tags: %w", err)
+		if r.Tags != nil {
+			if err  := json.Unmarshal(*r.Tags, &posts[i].TagsRaw); err != nil {
+				return nil, 0, fmt.Errorf("failed to unmarshal tags: %w", err)
+			}
 		}
 	}
 
@@ -106,7 +116,7 @@ func (pr *PostRepository) FetchPosts(ctx context.Context, limit, offset int) ([]
 	return posts, totalPosts, nil
 }
 
-// Create post
+// Fetch single post
 func (pr *PostRepository) FetchPost(ctx context.Context, postID string) (*request.PostWithAuthor, error) {
 	var row struct {
 		ID          string
@@ -114,7 +124,7 @@ func (pr *PostRepository) FetchPost(ctx context.Context, postID string) (*reques
 		Slug        string
 		Content     string
 		Excerpt     *string
-		TagsRaw     string
+		Tags        *[]byte
 		Source      *string
 		AccessLevel string
 		CreatedAt   time.Time
@@ -146,18 +156,22 @@ func (pr *PostRepository) FetchPost(ctx context.Context, postID string) (*reques
 	post := request.PostWithAuthor{
 		ID:          row.ID,
 		Title:       row.Title,
+		Slug:        row.Slug,
 		Content:     row.Content,
 		Excerpt:     row.Excerpt,
+		Tags:        row.Tags,
+		Source:      row.Source,
 		CreatedAt:   row.CreatedAt,
 		AccessLevel: row.AccessLevel,
 		AuthorName:  row.AuthorName,
-		TagsRaw:     row.TagsRaw,
 	}
 
-	
-	if err := json.Unmarshal([]byte(row.TagsRaw), &post.Tags); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal tags: %w", err)
+	if row.Tags != nil {
+		if err := json.Unmarshal(*row.Tags, &post.TagsRaw); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal tags: %w", err)
+		}
 	}
+
 
 	return &post, nil
 }

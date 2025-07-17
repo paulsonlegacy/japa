@@ -165,6 +165,12 @@ func AgentOnly() fiber.Handler {
 }
 
 
+// AuthorOnly returns middleware for authors and admins only
+func AuthorOnly() fiber.Handler {
+	return RoleRequired("author", "admin", "superadmin")
+}
+
+
 // AdminOnly returns middleware for admins only
 func AdminOnly() fiber.Handler {
 	return RoleRequired("admin", "superadmin")

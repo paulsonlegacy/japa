@@ -1,11 +1,11 @@
 package usecase
 
 import (
+	"time"
 	"context"
 	//"errors"
 	"encoding/json"
 	//"fmt"
-	//"time"
 
 	"japa/internal/app/http/dto/request"
 	"japa/internal/domain/entity"
@@ -80,6 +80,32 @@ func (usecase *PostUsecase) CreatePost(ctx context.Context, req request.CreatePo
 
 	// Create post in repository
 	if err := usecase.Repo.Create(ctx, post); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+// Creates new post
+func (usecase *PostUsecase) UpdatePost(ctx context.Context, req request.UpdatePostRequest) error {
+
+	// Build post update model
+	post := &entity.Post{
+		ID:          req.ID, // required
+		AuthorID:    req.AuthorID,
+		Title:       *req.Title,
+		Slug:        slug.Make(*req.Title),
+		Content:     *req.Content,
+		Excerpt:     req.Excerpt,
+		Tags:        req.Tags,
+		AccessLevel: *req.AccessLevel,
+		Source:      req.Source,
+		UpdatedAt:   time.Now(),
+	}
+
+	// Save updates to repository
+	if err := usecase.Repo.Update(ctx, post); err != nil {
 		return err
 	}
 
